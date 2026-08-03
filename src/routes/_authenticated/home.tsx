@@ -1,11 +1,11 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { CheckCircle2, Circle, Flame, ShieldAlert } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ArrowRight, Mail, RotateCcw, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
-import { GlassCard } from "@/components/GlassCard";
+import { SoftCard } from "@/components/SoftCard";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -16,233 +16,269 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { habitRepo, localId, moodRepo, streakRepo } from "@/data/repository";
-import type { Streak } from "@/data/types";
+import { badgeRepo, flagRepo, letterRepo, profileRepo, streakRepo, winRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
-import { analytics } from "@/lib/analytics";
+import { analytics, humanizeError } from "@/lib/analytics";
+import { celebrate } from "@/lib/celebrate";
+import { BADGES, earnedBadgeKeys, pickForDay, QUOTES } from "@/lib/content";
 import { haptic } from "@/lib/native/haptics";
-import { AFFIRMATIONS, HABITS, daysSince, hoursIntoDay, nextMilestone } from "@/lib/streak";
-import { cn } from "@/lib/utils";
+import { celebrateMilestone } from "@/lib/notifications";
+import { daysSince, elapsedSince, milestoneProgress, nextMilestone } from "@/lib/streak";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
     meta: [
       { title: "Your streak | No Contact Tracker" },
-      { name: "description", content: "See how long you've kept no contact and check in with today's habits." },
+      {
+        name: "description",
+        content: "Watch your no-contact streak grow second by second and see your next milestone.",
+      },
       { property: "og:title", content: "Your streak | No Contact Tracker" },
-      { property: "og:description", content: "Every day without contact is a step toward healing." },
+      { property: "og:description", content: "Every second here is a second you didn't reach out." },
     ],
   }),
-  component: Home,
+  component: HomeScreen,
 });
 
-const MOODS = [
-  { score: 1, label: "Awful", emoji: "😞" },
-  { score: 2, label: "Low", emoji: "😕" },
-  { score: 3, label: "Okay", emoji: "😐" },
-  { score: 4, label: "Good", emoji: "🙂" },
-  { score: 5, label: "Strong", emoji: "😊" },
-];
+function useTick(intervalMs = 1000) {
+  const [, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), intervalMs);
+    return () => window.clearInterval(id);
+  }, [intervalMs]);
+}
 
-function Home() {
+function Unit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-2xl font-semibold tabular-nums">
+        {String(value).padStart(2, "0")}
+      </span>
+      <span className="text-[0.65rem] tracking-wide text-muted-foreground uppercase">{label}</span>
+    </div>
+  );
+}
+
+function HomeScreen() {
   const { user } = useAuth();
   const userId = user?.id ?? "";
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [confirmReset, setConfirmReset] = useState(false);
-  const today = new Date().toISOString().slice(0, 10);
+  useTick();
 
-  useEffect(() => analytics.screen("home"), []);
+  useEffect(() => {
+    analytics.screen("home");
+  }, []);
 
-  const { data: streak } = useQuery({
+  const profile = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => profileRepo.get(userId),
+    enabled: Boolean(userId),
+  });
+  const streak = useQuery({
     queryKey: ["streak", userId],
-    queryFn: () => streakRepo.get(userId),
+    queryFn: () => streakRepo.ensure(userId),
+    enabled: Boolean(userId),
+  });
+  const flags = useQuery({
+    queryKey: ["flags", userId],
+    queryFn: () => flagRepo.list(userId),
+    enabled: Boolean(userId),
+  });
+  const wins = useQuery({
+    queryKey: ["wins", userId],
+    queryFn: () => winRepo.list(userId),
+    enabled: Boolean(userId),
+  });
+  const letters = useQuery({
+    queryKey: ["letters", userId],
+    queryFn: () => letterRepo.list(userId),
     enabled: Boolean(userId),
   });
 
-  const { data: habits = [] } = useQuery({
-    queryKey: ["habits", userId],
-    queryFn: () => habitRepo.list(userId),
-    enabled: Boolean(userId),
-  });
+  useEffect(() => {
+    if (profile.isLoading || !profile.data) return;
+    if (!profile.data.questionnaire_completed) void navigate({ to: "/questionnaire" });
+  }, [profile.isLoading, profile.data, navigate]);
 
-  const { data: moods = [] } = useQuery({
-    queryKey: ["moods", userId],
-    queryFn: () => moodRepo.list(userId),
-    enabled: Boolean(userId),
-  });
-
-  const effective: Streak = useMemo(
-    () =>
-      streak ?? {
-        id: localId(),
-        user_id: userId,
-        started_at: new Date().toISOString(),
-        best_days: 0,
-        relapse_count: 0,
-        ex_name: null,
-      },
-    [streak, userId],
-  );
-
-  const days = daysSince(effective.started_at);
-  const hours = hoursIntoDay(effective.started_at);
+  const startedAt = streak.data?.started_at;
+  const elapsed = elapsedSince(startedAt ?? new Date().toISOString());
+  const days = startedAt ? daysSince(startedAt) : 0;
   const target = nextMilestone(days);
-  const progress = Math.min(1, days / target);
-  const affirmation = AFFIRMATIONS[days % AFFIRMATIONS.length]!;
-  const todaysMood = moods.find((entry) => entry.logged_on === today);
+  const progress = milestoneProgress(days);
 
-  const logMood = async (score: number) => {
-    haptic.light();
-    await moodRepo.log(userId, score);
-    await queryClient.invalidateQueries({ queryKey: ["moods", userId] });
-  };
+  useEffect(() => {
+    if (!userId || !startedAt) return;
+    let sosUsed = false;
+    try {
+      sosUsed = window.localStorage.getItem("nc:sos-used") === "1";
+    } catch {
+      sosUsed = false;
+    }
+    const keys = earnedBadgeKeys({
+      days,
+      flags: flags.data?.length ?? 0,
+      wins: wins.data?.length ?? 0,
+      letters: letters.data?.length ?? 0,
+      sosUsed,
+    });
+    if (keys.length === 0) return;
+    void badgeRepo.unlock(userId, keys).then((rows) => {
+      queryClient.setQueryData(["badges", userId], rows);
+    });
+  }, [userId, startedAt, days, flags.data, wins.data, letters.data, queryClient]);
 
-  const toggleHabit = async (key: string) => {
-    haptic.select();
-    await habitRepo.toggle(userId, key);
-    await queryClient.invalidateQueries({ queryKey: ["habits", userId] });
-  };
+  const reset = useMutation({
+    mutationFn: async () => {
+      if (!userId || !streak.data) return;
+      await streakRepo.reset(userId, streak.data, days);
+    },
+    onSuccess: async () => {
+      haptic.warning();
+      analytics.track("streak_reset", { days });
+      toast("Timer restarted. A reset is data, not failure.");
+      await queryClient.invalidateQueries({ queryKey: ["streak", userId] });
+    },
+    onError: (error) => toast.error(humanizeError(error)),
+  });
 
-  const resetStreak = async () => {
-    haptic.warning();
-    await streakRepo.reset(userId, effective, "Reached out", days);
-    await queryClient.invalidateQueries({ queryKey: ["streak", userId] });
-    setConfirmReset(false);
-    toast("Streak reset. A slip isn't a failure — day one starts now.");
-  };
+  const milestoneHit = BADGES.find((badge) => badge.days === days);
+  useEffect(() => {
+    if (!milestoneHit || days === 0) return;
+    const key = `nc:milestone:${milestoneHit.key}`;
+    try {
+      if (window.localStorage.getItem(key)) return;
+      window.localStorage.setItem(key, "1");
+    } catch {
+      return;
+    }
+    void celebrate();
+    void celebrateMilestone(milestoneHit.label);
+  }, [milestoneHit, days]);
 
-  const radius = 78;
-  const circumference = 2 * Math.PI * radius;
+  const name = profile.data?.display_name;
 
   return (
-    <AppShell title="Your streak">
-      <GlassCard className="flex flex-col items-center py-8 animate-rise">
-        <div className="relative">
-          <svg viewBox="0 0 180 180" className="size-48 -rotate-90" aria-hidden>
-            <circle cx="90" cy="90" r={radius} stroke="var(--muted)" strokeWidth="10" fill="none" />
-            <circle
-              cx="90"
-              cy="90"
-              r={radius}
-              stroke="var(--primary)"
-              strokeWidth="10"
-              strokeLinecap="round"
-              fill="none"
-              strokeDasharray={circumference}
-              strokeDashoffset={circumference * (1 - progress)}
-              style={{ transition: "stroke-dashoffset 900ms var(--ease-native)" }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-5xl font-semibold tracking-tight">{days}</span>
-            <span className="text-sm text-muted-foreground">
-              {days === 1 ? "day" : "days"} · {hours}h
-            </span>
+    <AppShell
+      title={name ? `Hi ${name}` : "Your reset"}
+      subtitle={pickForDay(QUOTES)}
+    >
+      <div className="space-y-4">
+        <SoftCard className="bg-mint text-center">
+          <p className="text-sm font-medium text-on-tint/70">No contact for</p>
+          <p className="mt-1 text-6xl font-semibold tabular-nums text-on-tint">{elapsed.days}</p>
+          <p className="text-sm font-medium text-on-tint/70">
+            {elapsed.days === 1 ? "day" : "days"}
+          </p>
+          <div className="mt-5 flex items-center justify-center gap-6 text-on-tint">
+            <Unit value={elapsed.hours} label="hrs" />
+            <Unit value={elapsed.minutes} label="min" />
+            <Unit value={elapsed.seconds} label="sec" />
           </div>
+        </SoftCard>
+
+        <SoftCard>
+          <div className="flex items-baseline justify-between">
+            <p className="font-medium">Next milestone</p>
+            <p className="text-sm text-muted-foreground">
+              Day {target} · {Math.max(0, target - days)} to go
+            </p>
+          </div>
+          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${Math.round(progress * 100)}%` }}
+            />
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
+            Best streak so far: {Math.max(streak.data?.best_days ?? 0, days)} days
+          </p>
+        </SoftCard>
+
+        <div className="grid grid-cols-3 gap-3">
+          <Link to="/flags" className="press">
+            <SoftCard className="bg-coral h-full text-center">
+              <p className="text-2xl font-semibold text-on-tint">{flags.data?.length ?? 0}</p>
+              <p className="text-xs text-on-tint/70">Flags</p>
+            </SoftCard>
+          </Link>
+          <Link to="/wins" className="press">
+            <SoftCard className="bg-mint h-full text-center">
+              <p className="text-2xl font-semibold text-on-tint">{wins.data?.length ?? 0}</p>
+              <p className="text-xs text-on-tint/70">Wins</p>
+            </SoftCard>
+          </Link>
+          <Link to="/badges" className="press">
+            <SoftCard className="bg-lavender h-full text-center">
+              <p className="text-2xl font-semibold text-on-tint">
+                {earnedBadgeKeys({
+                  days,
+                  flags: flags.data?.length ?? 0,
+                  wins: wins.data?.length ?? 0,
+                  letters: letters.data?.length ?? 0,
+                  sosUsed: false,
+                }).length}
+              </p>
+              <p className="text-xs text-on-tint/70">Badges</p>
+            </SoftCard>
+          </Link>
         </div>
 
-        <p className="mt-5 text-center text-sm text-muted-foreground">
-          Next milestone: <span className="text-foreground">{target} days</span> · Best:{" "}
-          <span className="text-foreground">{Math.max(effective.best_days, days)}</span>
-        </p>
-      </GlassCard>
+        <Link to="/letters" className="press block">
+          <SoftCard className="flex items-center gap-4">
+            <span className="flex size-11 items-center justify-center rounded-full bg-lavender">
+              <Mail className="size-5 text-on-tint" aria-hidden />
+            </span>
+            <div className="flex-1">
+              <p className="font-medium">Unsent letters</p>
+              <p className="text-sm text-muted-foreground">
+                Say everything — without sending it.
+              </p>
+            </div>
+            <ArrowRight className="size-5 text-muted-foreground" aria-hidden />
+          </SoftCard>
+        </Link>
 
-      <GlassCard className="mt-4 animate-rise">
-        <p className="text-base leading-relaxed">"{affirmation}"</p>
-      </GlassCard>
+        <SoftCard className="bg-sky">
+          <div className="flex items-start gap-3">
+            <Sparkles className="mt-0.5 size-5 text-on-tint" aria-hidden />
+            <p className="text-sm text-on-tint">
+              {profile.data?.display_name
+                ? `${profile.data.display_name}, the urge to reach out fades faster every single day.`
+                : "The urge to reach out fades faster every single day."}
+            </p>
+          </div>
+        </SoftCard>
 
-      <section className="mt-4" aria-labelledby="mood-heading">
-        <h2 id="mood-heading" className="mb-2 text-sm font-medium text-muted-foreground">
-          How are you feeling today?
-        </h2>
-        <GlassCard className="flex justify-between gap-1">
-          {MOODS.map((mood) => (
-            <button
-              key={mood.score}
-              type="button"
-              onClick={() => logMood(mood.score)}
-              aria-label={mood.label}
-              aria-pressed={todaysMood?.score === mood.score}
-              className={cn(
-                "press flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-xs",
-                todaysMood?.score === mood.score
-                  ? "bg-primary/15 text-foreground"
-                  : "text-muted-foreground",
-              )}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="ghost"
+              className="press h-12 w-full rounded-2xl text-muted-foreground"
+              onClick={() => haptic.light()}
             >
-              <span className="text-2xl">{mood.emoji}</span>
-              {mood.label}
-            </button>
-          ))}
-        </GlassCard>
-      </section>
-
-      <section className="mt-4" aria-labelledby="habits-heading">
-        <h2 id="habits-heading" className="mb-2 text-sm font-medium text-muted-foreground">
-          Today's recovery habits
-        </h2>
-        <GlassCard className="space-y-1 p-2">
-          {HABITS.map((habit) => {
-            const done = habits.some(
-              (entry) => entry.habit_key === habit.key && entry.checked_on === today,
-            );
-            return (
-              <button
-                key={habit.key}
-                type="button"
-                onClick={() => toggleHabit(habit.key)}
-                aria-pressed={done}
-                className="press flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left"
-              >
-                {done ? (
-                  <CheckCircle2 className="size-5 text-success" aria-hidden />
-                ) : (
-                  <Circle className="size-5 text-muted-foreground" aria-hidden />
-                )}
-                <span className="flex-1">
-                  <span className={cn("block text-sm", done && "text-muted-foreground line-through")}>
-                    {habit.label}
-                  </span>
-                  <span className="block text-xs text-muted-foreground">{habit.hint}</span>
-                </span>
-              </button>
-            );
-          })}
-        </GlassCard>
-      </section>
-
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <Button asChild variant="secondary" className="press h-13 rounded-2xl">
-          <Link to="/journal">
-            <Flame className="size-4" aria-hidden /> Urge hit
-          </Link>
-        </Button>
-        <Button
-          variant="ghost"
-          className="press h-13 rounded-2xl text-destructive"
-          onClick={() => setConfirmReset(true)}
-        >
-          <ShieldAlert className="size-4" aria-hidden /> I broke it
-        </Button>
+              <RotateCcw className="size-4" aria-hidden />I broke no contact
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="rounded-3xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Restart your timer?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Your best streak of {Math.max(streak.data?.best_days ?? 0, days)} days is kept.
+                Relapse is part of recovery — starting again today is still progress.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-2xl">Not yet</AlertDialogCancel>
+              <AlertDialogAction className="rounded-2xl" onClick={() => reset.mutate()}>
+                Restart timer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
-        <AlertDialogContent className="rounded-3xl">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Reset your streak?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your {days}-day record is kept as your personal best. Day one starts again right now.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-2xl">Not yet</AlertDialogCancel>
-            <AlertDialogAction className="rounded-2xl" onClick={resetStreak}>
-              Reset honestly
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </AppShell>
   );
 }
