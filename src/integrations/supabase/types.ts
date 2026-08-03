@@ -14,7 +14,264 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      badges: {
+        Row: {
+          badge_key: string
+          created_at: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        Insert: {
+          badge_key: string
+          created_at?: string
+          id?: string
+          unlocked_at?: string
+          user_id: string
+        }
+        Update: {
+          badge_key?: string
+          created_at?: string
+          id?: string
+          unlocked_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      flags: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          note: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      letters: {
+        Row: {
+          body: string
+          created_at: string
+          emotion: string | null
+          id: string
+          is_draft: boolean
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          emotion?: string | null
+          id?: string
+          is_draft?: boolean
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          emotion?: string | null
+          id?: string
+          is_draft?: boolean
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          display_name: string | null
+          evening_reminder: boolean
+          id: string
+          is_premium: boolean
+          morning_reminder: boolean
+          notifications_enabled: boolean
+          push_token: string | null
+          questionnaire_completed: boolean
+          recovery_started_at: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          evening_reminder?: boolean
+          id: string
+          is_premium?: boolean
+          morning_reminder?: boolean
+          notifications_enabled?: boolean
+          push_token?: string | null
+          questionnaire_completed?: boolean
+          recovery_started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          display_name?: string | null
+          evening_reminder?: boolean
+          id?: string
+          is_premium?: boolean
+          morning_reminder?: boolean
+          notifications_enabled?: boolean
+          push_token?: string | null
+          questionnaire_completed?: boolean
+          recovery_started_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      questionnaire_answers: {
+        Row: {
+          age_range: string | null
+          biggest_goal: string | null
+          checks_social: string | null
+          completed: boolean
+          created_at: string
+          difficulty_today: number | null
+          gender: string | null
+          id: string
+          last_contact_at: string | null
+          nickname: string | null
+          reasons: string[]
+          referral_source: string | null
+          relationship_length: string | null
+          updated_at: string
+          user_id: string
+          wants_reminders: boolean | null
+          who_ended: string | null
+        }
+        Insert: {
+          age_range?: string | null
+          biggest_goal?: string | null
+          checks_social?: string | null
+          completed?: boolean
+          created_at?: string
+          difficulty_today?: number | null
+          gender?: string | null
+          id?: string
+          last_contact_at?: string | null
+          nickname?: string | null
+          reasons?: string[]
+          referral_source?: string | null
+          relationship_length?: string | null
+          updated_at?: string
+          user_id: string
+          wants_reminders?: boolean | null
+          who_ended?: string | null
+        }
+        Update: {
+          age_range?: string | null
+          biggest_goal?: string | null
+          checks_social?: string | null
+          completed?: boolean
+          created_at?: string
+          difficulty_today?: number | null
+          gender?: string | null
+          id?: string
+          last_contact_at?: string | null
+          nickname?: string | null
+          reasons?: string[]
+          referral_source?: string | null
+          relationship_length?: string | null
+          updated_at?: string
+          user_id?: string
+          wants_reminders?: boolean | null
+          who_ended?: string | null
+        }
+        Relationships: []
+      }
+      streaks: {
+        Row: {
+          best_days: number
+          created_at: string
+          ex_name: string | null
+          id: string
+          relapse_count: number
+          started_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          best_days?: number
+          created_at?: string
+          ex_name?: string | null
+          id?: string
+          relapse_count?: number
+          started_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          best_days?: number
+          created_at?: string
+          ex_name?: string | null
+          id?: string
+          relapse_count?: number
+          started_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wins: {
+        Row: {
+          achieved_on: string
+          created_at: string
+          id: string
+          note: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          achieved_on?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          achieved_on?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
