@@ -74,3 +74,51 @@ export type Letter = {
   created_at: string;
   updated_at: string;
 };
+
+export type DailyPromise = {
+  id: string;
+  user_id: string;
+  promised_on: string;
+  created_at: string;
+};
+
+export type Picture = {
+  id: string;
+  user_id: string;
+  image_url: string;
+  caption: string | null;
+  taken_on: string;
+  created_at: string;
+};
+
+export type Affirmation = {
+  id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+};
+
+export type Ritual = {
+  id: string;
+  user_id: string;
+  title: string;
+  note: string | null;
+  created_at: string;
+};
+
+export type Trigger = {
+  id: string;
+  user_id: string;
+  title: string;
+  note: string | null;
+  created_at: string;
+};
+
+export type JournalEntry = {
+  id: string;
+  user_id: string;
+  title: string | null;
+  body: string;
+  mood: string | null;
+  created_at: string;
+};

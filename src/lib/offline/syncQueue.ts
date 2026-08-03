@@ -11,7 +11,13 @@ export type SyncTable =
   | "flags"
   | "wins"
   | "badges"
-  | "letters";
+  | "letters"
+  | "daily_promises"
+  | "pictures"
+  | "affirmations"
+  | "rituals"
+  | "triggers"
+  | "journal_entries";
 
 export type QueueItem = {
   id: string;
