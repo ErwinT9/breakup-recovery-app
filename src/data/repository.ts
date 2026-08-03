@@ -79,6 +79,19 @@ async function writeThrough(
   payload: Record<string, unknown>,
   onConflict?: string,
 ): Promise<void> {
+  // When online, persist immediately so a follow-up read-through can't race the
+  // background queue and return stale server state.
+  if (isOnline()) {
+    try {
+      const { error } = await supabase
+        .from(table)
+        .upsert(payload as never, { onConflict: onConflict ?? "id" });
+      if (error) throw error;
+      return;
+    } catch (error) {
+      analytics.error(error, { stage: "write_through", table });
+    }
+  }
   await enqueue(
     onConflict
       ? { id, table, op: "upsert", payload, onConflict }
