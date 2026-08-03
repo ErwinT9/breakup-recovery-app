@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
-import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { haptic } from "@/lib/native/haptics";
@@ -53,11 +52,12 @@ function AuthScreen() {
   const google = async () => {
     haptic.light();
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/home` },
     });
     setBusy(false);
-    if (result.error) toast.error(humanizeError(result.error));
+    if (oauthError) toast.error(humanizeError(oauthError));
   };
 
   const submit = async (event: React.FormEvent) => {
