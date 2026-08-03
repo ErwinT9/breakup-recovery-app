@@ -22,6 +22,7 @@ import { Route as AuthenticatedFlagsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
 import { Route as AuthenticatedLettersRouteImport } from './routes/_authenticated/letters'
+import { Route as AuthenticatedPicturesRouteImport } from './routes/_authenticated/pictures'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedQuestionnaireRouteImport } from './routes/_authenticated/questionnaire'
 import { Route as AuthenticatedRitualsRouteImport } from './routes/_authenticated/rituals'
@@ -93,6 +94,11 @@ const AuthenticatedLettersRoute = AuthenticatedLettersRouteImport.update({
   path: '/letters',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPicturesRoute = AuthenticatedPicturesRouteImport.update({
+  id: '/pictures',
+  path: '/pictures',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof AuthenticatedHomeRoute
   '/journal': typeof AuthenticatedJournalRoute
   '/letters': typeof AuthenticatedLettersRoute
+  '/pictures': typeof AuthenticatedPicturesRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/questionnaire': typeof AuthenticatedQuestionnaireRoute
   '/rituals': typeof AuthenticatedRitualsRoute
@@ -152,6 +159,7 @@ export interface FileRoutesByTo {
   '/home': typeof AuthenticatedHomeRoute
   '/journal': typeof AuthenticatedJournalRoute
   '/letters': typeof AuthenticatedLettersRoute
+  '/pictures': typeof AuthenticatedPicturesRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/questionnaire': typeof AuthenticatedQuestionnaireRoute
   '/rituals': typeof AuthenticatedRitualsRoute
@@ -173,6 +181,7 @@ export interface FileRoutesById {
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/journal': typeof AuthenticatedJournalRoute
   '/_authenticated/letters': typeof AuthenticatedLettersRoute
+  '/_authenticated/pictures': typeof AuthenticatedPicturesRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/questionnaire': typeof AuthenticatedQuestionnaireRoute
   '/_authenticated/rituals': typeof AuthenticatedRitualsRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/journal'
     | '/letters'
+    | '/pictures'
     | '/profile'
     | '/questionnaire'
     | '/rituals'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/journal'
     | '/letters'
+    | '/pictures'
     | '/profile'
     | '/questionnaire'
     | '/rituals'
@@ -233,6 +244,7 @@ export interface FileRouteTypes {
     | '/_authenticated/home'
     | '/_authenticated/journal'
     | '/_authenticated/letters'
+    | '/_authenticated/pictures'
     | '/_authenticated/profile'
     | '/_authenticated/questionnaire'
     | '/_authenticated/rituals'
@@ -343,6 +355,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLettersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pictures': {
+      id: '/_authenticated/pictures'
+      path: '/pictures'
+      fullPath: '/pictures'
+      preLoaderRoute: typeof AuthenticatedPicturesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/profile': {
       id: '/_authenticated/profile'
       path: '/profile'
@@ -388,6 +407,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
   AuthenticatedLettersRoute: typeof AuthenticatedLettersRoute
+  AuthenticatedPicturesRoute: typeof AuthenticatedPicturesRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedQuestionnaireRoute: typeof AuthenticatedQuestionnaireRoute
   AuthenticatedRitualsRoute: typeof AuthenticatedRitualsRoute
@@ -402,6 +422,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedJournalRoute: AuthenticatedJournalRoute,
   AuthenticatedLettersRoute: AuthenticatedLettersRoute,
+  AuthenticatedPicturesRoute: AuthenticatedPicturesRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedQuestionnaireRoute: AuthenticatedQuestionnaireRoute,
   AuthenticatedRitualsRoute: AuthenticatedRitualsRoute,
