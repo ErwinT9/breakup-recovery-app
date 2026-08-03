@@ -90,10 +90,13 @@ function Questionnaire() {
   useEffect(() => {
     analytics.screen("questionnaire");
     if (!userId) return;
+    void profileRepo.get(userId).then((profile) => {
+      if (profile?.questionnaire_completed) void navigate({ to: "/home" });
+    });
     void questionnaireRepo.get(userId).then((existing) => {
       if (existing) setAnswers(existing);
     });
-  }, [userId]);
+  }, [userId, navigate]);
 
   const set = (patch: Answers) => setAnswers((current) => ({ ...current, ...patch }));
 
