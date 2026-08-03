@@ -359,3 +359,86 @@ export const letterRepo = {
 export async function clearUserCache(userId: string): Promise<void> {
   await Promise.all(CACHES.map((name) => storage.remove(STORAGE_KEYS.cache(name, userId))));
 }
+
+/** Builds an offline-first list repository for the simple activity tables. */
+function listRepo<T extends { id: string; user_id: string; created_at: string }>(
+  cacheName: string,
+  table: SyncTable,
+  defaults: (userId: string) => Omit<T, "id" | "user_id" | "created_at">,
+) {
+  return {
+    async list(userId: string): Promise<T[]> {
+      return readThrough<T[]>(cacheName, userId, [], async () => {
+        const { data, error } = await supabase
+          .from(table)
+          .select("*")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+          .limit(300);
+        if (error) throw error;
+        return (data ?? []) as unknown as T[];
+      });
+    },
+    async save(userId: string, input: Partial<T>): Promise<T[]> {
+      const list = await cacheRead<T[]>(cacheName, userId, []);
+      const row = {
+        ...defaults(userId),
+        id: input.id ?? newId(),
+        user_id: userId,
+        created_at: input.created_at ?? new Date().toISOString(),
+        ...input,
+      } as T;
+      const next = [row, ...list.filter((item) => item.id !== row.id)];
+      await cacheWrite(cacheName, userId, next);
+      await writeThrough(table, row.id, { ...row });
+      return next;
+    },
+    async remove(userId: string, id: string): Promise<T[]> {
+      const list = await cacheRead<T[]>(cacheName, userId, []);
+      const next = list.filter((item) => item.id !== id);
+      await cacheWrite(cacheName, userId, next);
+      await enqueue({ id, table, op: "delete", payload: { id } });
+      return next;
+    },
+  };
+}
+
+export const pictureRepo = listRepo<Picture>("pictures", "pictures", () => ({
+  image_url: "",
+  caption: null,
+  taken_on: new Date().toISOString().slice(0, 10),
+}));
+
+export const affirmationRepo = listRepo<Affirmation>("affirmations", "affirmations", () => ({
+  body: "",
+}));
+
+export const ritualRepo = listRepo<Ritual>("rituals", "rituals", () => ({
+  title: "",
+  note: null,
+}));
+
+export const triggerRepo = listRepo<Trigger>("triggers", "triggers", () => ({
+  title: "",
+  note: null,
+}));
+
+export const journalRepo = listRepo<JournalEntry>("journal", "journal_entries", () => ({
+  title: null,
+  body: "",
+  mood: null,
+}));
+
+const promiseList = listRepo<DailyPromise>("promises", "daily_promises", () => ({
+  promised_on: new Date().toISOString().slice(0, 10),
+}));
+
+export const promiseRepo = {
+  list: promiseList.list,
+  async makeToday(userId: string): Promise<DailyPromise[]> {
+    const today = new Date().toISOString().slice(0, 10);
+    const list = await promiseList.list(userId);
+    if (list.some((item) => item.promised_on === today)) return list;
+    return promiseList.save(userId, { promised_on: today });
+  },
+};
