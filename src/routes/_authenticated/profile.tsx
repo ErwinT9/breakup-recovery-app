@@ -498,6 +498,17 @@ function SettingsScreen() {
             <RefreshCw className="size-5 text-muted-foreground" aria-hidden />
             <span className="flex-1 text-sm font-medium">Restore purchases</span>
           </button>
+          <button
+            type="button"
+            className="press flex w-full items-center gap-3 py-2 text-left"
+            onClick={() => {
+              haptic.light();
+              setLogoutOpen(true);
+            }}
+          >
+            <LogOut className="size-5 text-muted-foreground" aria-hidden />
+            <span className="flex-1 text-sm font-medium">Log out</span>
+          </button>
         </SoftCard>
 
         <Button
@@ -507,15 +518,6 @@ function SettingsScreen() {
         >
           <Trash2 className="size-4" aria-hidden />
           Delete account
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="press h-12 w-full rounded-2xl"
-          onClick={() => setLogoutOpen(true)}
-        >
-          <LogOut className="size-4" aria-hidden />
-          Logout
         </Button>
       </main>
 
@@ -553,10 +555,8 @@ function SettingsScreen() {
       <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Log out?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Your data stays safely backed up to your account.
-            </AlertDialogDescription>
+            <AlertDialogTitle>Log Out</AlertDialogTitle>
+            <AlertDialogDescription>Are you sure you want to log out?</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
@@ -564,13 +564,19 @@ function SettingsScreen() {
               className="rounded-2xl"
               onClick={async () => {
                 haptic.light();
-                await clearUserCache(userId);
-                queryClient.clear();
-                await signOut();
-                void navigate({ to: "/auth", replace: true });
+                try {
+                  await queryClient.cancelQueries();
+                  queryClient.clear();
+                  await clearUserCache(userId);
+                  await signOut();
+                  toast.success("Logged out successfully.");
+                  void navigate({ to: "/auth", replace: true });
+                } catch (error) {
+                  toast.error(humanizeError(error));
+                }
               }}
             >
-              Log out
+              Log Out
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
