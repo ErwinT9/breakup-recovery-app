@@ -53,7 +53,7 @@ function Choice({
   onSelect,
 }: {
   options: string[];
-  value?: string | null;
+  value?: string | null | undefined;
   onSelect: (option: string) => void;
 }) {
   return (

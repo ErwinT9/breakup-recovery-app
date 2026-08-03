@@ -23,8 +23,8 @@ export function AppShell({
 }: {
   children: ReactNode;
   title: string;
-  subtitle?: string;
-  action?: ReactNode;
+  subtitle?: string | undefined;
+  action?: ReactNode | undefined;
 }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [sosOpen, setSosOpen] = useState(false);

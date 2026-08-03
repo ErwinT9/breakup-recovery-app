@@ -46,7 +46,7 @@ function FlagsScreen() {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
-  const [category, setCategory] = useState(FLAG_CATEGORIES[0]?.key ?? "other");
+  const [category, setCategory] = useState<string>(FLAG_CATEGORIES[0]?.key ?? "other");
 
   useEffect(() => {
     analytics.screen("flags");
