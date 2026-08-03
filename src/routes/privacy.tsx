@@ -6,7 +6,7 @@ export const Route = createFileRoute("/privacy")({
       { title: "Privacy Policy | No Contact Tracker" },
       { name: "description", content: "How No Contact Tracker stores, protects and deletes your personal data." },
       { property: "og:title", content: "Privacy Policy | No Contact Tracker" },
-      { property: "og:description", content: "Your journals are private to your account and encrypted in transit." },
+      { property: "og:description", content: "Your flags, wins and letters are private to your account and encrypted in transit." },
     ],
   }),
   component: Privacy,
@@ -22,8 +22,7 @@ function Privacy() {
       </p>
       <h2 className="pt-2 text-base font-medium text-foreground">What we store</h2>
       <p>
-        Your email address, streak dates, mood scores, habit check-ins and journal entries. Journal
-        content is cached on your device and synced to your private account.
+        Your email address, streak dates, questionnaire answers, flags, wins, badges and unsent letters. Content is cached on your device and synced to your private account.
       </p>
       <h2 className="pt-2 text-base font-medium text-foreground">Who can access it</h2>
       <p>

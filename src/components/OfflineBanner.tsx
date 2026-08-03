@@ -11,14 +11,14 @@ export function OfflineBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="glass mx-4 mt-3 flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm animate-rise"
+      className="animate-rise mx-5 mt-3 flex items-center gap-3 rounded-2xl bg-sky px-4 py-2.5 text-sm text-on-tint"
     >
       {online ? (
-        <RefreshCw className="size-4 shrink-0 animate-spin text-accent" aria-hidden />
+        <RefreshCw className="size-4 shrink-0 animate-spin" aria-hidden />
       ) : (
-        <CloudOff className="size-4 shrink-0 text-primary" aria-hidden />
+        <CloudOff className="size-4 shrink-0" aria-hidden />
       )}
-      <p className="text-muted-foreground">
+      <p>
         {online
           ? `Syncing ${pending} saved change${pending === 1 ? "" : "s"}…`
           : "Offline — everything is saved on this device and syncs later."}

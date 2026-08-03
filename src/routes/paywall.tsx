@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { BarChart3, BookHeart, CloudUpload, Palette, Target, X } from "lucide-react";
 import { useEffect } from "react";
 
-import { GlassCard } from "@/components/GlassCard";
+import { SoftCard } from "@/components/SoftCard";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { analytics } from "@/lib/analytics";
@@ -12,7 +12,7 @@ export const Route = createFileRoute("/paywall")({
   head: () => ({
     meta: [
       { title: "Premium | No Contact Tracker" },
-      { name: "description", content: "Unlock unlimited journaling, deep analytics, habit challenges and cloud backup." },
+      { name: "description", content: "Unlock unlimited flags and letters, every badge, advanced reminders and cloud backup." },
       { property: "og:title", content: "Premium | No Contact Tracker" },
       { property: "og:description", content: "7 days free, then cancel anytime." },
     ],
@@ -21,9 +21,9 @@ export const Route = createFileRoute("/paywall")({
 });
 
 const BENEFITS = [
-  { icon: BookHeart, label: "Unlimited private journaling" },
+  { icon: BookHeart, label: "Unlimited flags, wins and letters" },
   { icon: BarChart3, label: "Mood and urge analytics" },
-  { icon: Target, label: "30-day habit challenges" },
+  { icon: Target, label: "Full emergency toolkit and badges" },
   { icon: CloudUpload, label: "Encrypted cloud backup" },
   { icon: Palette, label: "Premium themes and widgets" },
 ];
@@ -52,7 +52,7 @@ function Paywall() {
         7 days free. Cancel anytime before the trial ends and you won't be charged.
       </p>
 
-      <GlassCard className="mt-6 space-y-4 animate-rise">
+      <SoftCard className="mt-6 space-y-4 animate-rise">
         {BENEFITS.map(({ icon: Icon, label }) => (
           <div key={label} className="flex items-center gap-3">
             <span className="flex size-9 items-center justify-center rounded-full bg-primary/15">
@@ -61,7 +61,7 @@ function Paywall() {
             <span className="text-sm">{label}</span>
           </div>
         ))}
-      </GlassCard>
+      </SoftCard>
 
       <div className="mt-auto pt-8">
         <Button

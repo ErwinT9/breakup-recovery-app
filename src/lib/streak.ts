@@ -1,15 +1,30 @@
-const DAY = 24 * 60 * 60 * 1000;
+const SECOND = 1000;
+const MINUTE = 60 * SECOND;
+const HOUR = 60 * MINUTE;
+const DAY = 24 * HOUR;
 
-export function daysSince(iso: string): number {
+export type Elapsed = {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  totalMs: number;
+};
+
+export function elapsedSince(iso: string, now = Date.now()): Elapsed {
   const start = new Date(iso).getTime();
-  if (Number.isNaN(start)) return 0;
-  return Math.max(0, Math.floor((Date.now() - start) / DAY));
+  const totalMs = Number.isNaN(start) ? 0 : Math.max(0, now - start);
+  return {
+    days: Math.floor(totalMs / DAY),
+    hours: Math.floor((totalMs % DAY) / HOUR),
+    minutes: Math.floor((totalMs % HOUR) / MINUTE),
+    seconds: Math.floor((totalMs % MINUTE) / SECOND),
+    totalMs,
+  };
 }
 
-export function hoursIntoDay(iso: string): number {
-  const start = new Date(iso).getTime();
-  if (Number.isNaN(start)) return 0;
-  return Math.floor(((Date.now() - start) % DAY) / (60 * 60 * 1000));
+export function daysSince(iso: string, now = Date.now()): number {
+  return elapsedSince(iso, now).days;
 }
 
 export const MILESTONES = [1, 3, 7, 14, 30, 60, 90, 180, 365];
@@ -18,20 +33,9 @@ export function nextMilestone(days: number): number {
   return MILESTONES.find((milestone) => milestone > days) ?? days + 30;
 }
 
-export const AFFIRMATIONS = [
-  "Silence is not rejection. It is protection.",
-  "You are allowed to heal at your own pace.",
-  "The urge will pass whether you act on it or not.",
-  "Every unanswered message is a boundary kept.",
-  "You are rebuilding a life that fits you.",
-  "Missing someone is not a reason to return.",
-  "Today you choose peace over closure.",
-  "Your future self is already grateful.",
-];
-
-export const HABITS = [
-  { key: "movement", label: "Move your body", hint: "A walk counts" },
-  { key: "sleep", label: "Sleep before midnight", hint: "Recovery fuel" },
-  { key: "connect", label: "Reach out to a friend", hint: "Not to them" },
-  { key: "no-check", label: "No profile checking", hint: "Stay off their page" },
-];
+export function milestoneProgress(days: number): number {
+  const next = nextMilestone(days);
+  const previous = [...MILESTONES].reverse().find((milestone) => milestone <= days) ?? 0;
+  const span = next - previous || 1;
+  return Math.min(1, Math.max(0, (days - previous) / span));
+}

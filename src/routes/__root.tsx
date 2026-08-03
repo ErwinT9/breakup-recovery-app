@@ -90,9 +90,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Track your no-contact streak, journal the urges, and rebuild healthy habits after a breakup.",
+          "Track your no-contact streak in real time, log red flags and wins, unlock badges and get through urges.",
       },
-      { name: "theme-color", content: "#211a2b" },
+      { name: "theme-color", content: "#FFFFFF" },
       { property: "og:title", content: "No Contact Tracker: Breakup Reset" },
       {
         property: "og:description",

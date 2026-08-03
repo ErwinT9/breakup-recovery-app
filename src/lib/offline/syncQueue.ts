@@ -7,10 +7,11 @@ import { isOnline, subscribeNetwork } from "./network";
 export type SyncTable =
   | "profiles"
   | "streaks"
-  | "journal_entries"
-  | "mood_logs"
-  | "relapses"
-  | "habit_checkins";
+  | "questionnaire_answers"
+  | "flags"
+  | "wins"
+  | "badges"
+  | "letters";
 
 export type QueueItem = {
   id: string;
