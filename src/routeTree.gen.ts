@@ -16,12 +16,16 @@ import { Route as PaywallRouteImport } from './routes/paywall'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AuthenticatedAffirmationsRouteImport } from './routes/_authenticated/affirmations'
 import { Route as AuthenticatedBadgesRouteImport } from './routes/_authenticated/badges'
 import { Route as AuthenticatedFlagsRouteImport } from './routes/_authenticated/flags'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
 import { Route as AuthenticatedLettersRouteImport } from './routes/_authenticated/letters'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedQuestionnaireRouteImport } from './routes/_authenticated/questionnaire'
+import { Route as AuthenticatedRitualsRouteImport } from './routes/_authenticated/rituals'
+import { Route as AuthenticatedTriggersRouteImport } from './routes/_authenticated/triggers'
 import { Route as AuthenticatedWinsRouteImport } from './routes/_authenticated/wins'
 
 const IndexRoute = IndexRouteImport.update({
@@ -58,6 +62,12 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAffirmationsRoute =
+  AuthenticatedAffirmationsRouteImport.update({
+    id: '/affirmations',
+    path: '/affirmations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedBadgesRoute = AuthenticatedBadgesRouteImport.update({
   id: '/badges',
   path: '/badges',
@@ -71,6 +81,11 @@ const AuthenticatedFlagsRoute = AuthenticatedFlagsRouteImport.update({
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJournalRoute = AuthenticatedJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLettersRoute = AuthenticatedLettersRouteImport.update({
@@ -89,6 +104,16 @@ const AuthenticatedQuestionnaireRoute =
     path: '/questionnaire',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedRitualsRoute = AuthenticatedRitualsRouteImport.update({
+  id: '/rituals',
+  path: '/rituals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTriggersRoute = AuthenticatedTriggersRouteImport.update({
+  id: '/triggers',
+  path: '/triggers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedWinsRoute = AuthenticatedWinsRouteImport.update({
   id: '/wins',
   path: '/wins',
@@ -102,12 +127,16 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/affirmations': typeof AuthenticatedAffirmationsRoute
   '/badges': typeof AuthenticatedBadgesRoute
   '/flags': typeof AuthenticatedFlagsRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/journal': typeof AuthenticatedJournalRoute
   '/letters': typeof AuthenticatedLettersRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/questionnaire': typeof AuthenticatedQuestionnaireRoute
+  '/rituals': typeof AuthenticatedRitualsRoute
+  '/triggers': typeof AuthenticatedTriggersRoute
   '/wins': typeof AuthenticatedWinsRoute
 }
 export interface FileRoutesByTo {
@@ -117,12 +146,16 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/affirmations': typeof AuthenticatedAffirmationsRoute
   '/badges': typeof AuthenticatedBadgesRoute
   '/flags': typeof AuthenticatedFlagsRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/journal': typeof AuthenticatedJournalRoute
   '/letters': typeof AuthenticatedLettersRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/questionnaire': typeof AuthenticatedQuestionnaireRoute
+  '/rituals': typeof AuthenticatedRitualsRoute
+  '/triggers': typeof AuthenticatedTriggersRoute
   '/wins': typeof AuthenticatedWinsRoute
 }
 export interface FileRoutesById {
@@ -134,12 +167,16 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/affirmations': typeof AuthenticatedAffirmationsRoute
   '/_authenticated/badges': typeof AuthenticatedBadgesRoute
   '/_authenticated/flags': typeof AuthenticatedFlagsRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/journal': typeof AuthenticatedJournalRoute
   '/_authenticated/letters': typeof AuthenticatedLettersRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/questionnaire': typeof AuthenticatedQuestionnaireRoute
+  '/_authenticated/rituals': typeof AuthenticatedRitualsRoute
+  '/_authenticated/triggers': typeof AuthenticatedTriggersRoute
   '/_authenticated/wins': typeof AuthenticatedWinsRoute
 }
 export interface FileRouteTypes {
@@ -151,12 +188,16 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/affirmations'
     | '/badges'
     | '/flags'
     | '/home'
+    | '/journal'
     | '/letters'
     | '/profile'
     | '/questionnaire'
+    | '/rituals'
+    | '/triggers'
     | '/wins'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -166,12 +207,16 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/affirmations'
     | '/badges'
     | '/flags'
     | '/home'
+    | '/journal'
     | '/letters'
     | '/profile'
     | '/questionnaire'
+    | '/rituals'
+    | '/triggers'
     | '/wins'
   id:
     | '__root__'
@@ -182,12 +227,16 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/_authenticated/affirmations'
     | '/_authenticated/badges'
     | '/_authenticated/flags'
     | '/_authenticated/home'
+    | '/_authenticated/journal'
     | '/_authenticated/letters'
     | '/_authenticated/profile'
     | '/_authenticated/questionnaire'
+    | '/_authenticated/rituals'
+    | '/_authenticated/triggers'
     | '/_authenticated/wins'
   fileRoutesById: FileRoutesById
 }
@@ -252,6 +301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/affirmations': {
+      id: '/_authenticated/affirmations'
+      path: '/affirmations'
+      fullPath: '/affirmations'
+      preLoaderRoute: typeof AuthenticatedAffirmationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/badges': {
       id: '/_authenticated/badges'
       path: '/badges'
@@ -271,6 +327,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/journal': {
+      id: '/_authenticated/journal'
+      path: '/journal'
+      fullPath: '/journal'
+      preLoaderRoute: typeof AuthenticatedJournalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/letters': {
@@ -294,6 +357,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedQuestionnaireRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/rituals': {
+      id: '/_authenticated/rituals'
+      path: '/rituals'
+      fullPath: '/rituals'
+      preLoaderRoute: typeof AuthenticatedRitualsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/triggers': {
+      id: '/_authenticated/triggers'
+      path: '/triggers'
+      fullPath: '/triggers'
+      preLoaderRoute: typeof AuthenticatedTriggersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/wins': {
       id: '/_authenticated/wins'
       path: '/wins'
@@ -305,22 +382,30 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAffirmationsRoute: typeof AuthenticatedAffirmationsRoute
   AuthenticatedBadgesRoute: typeof AuthenticatedBadgesRoute
   AuthenticatedFlagsRoute: typeof AuthenticatedFlagsRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
   AuthenticatedLettersRoute: typeof AuthenticatedLettersRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedQuestionnaireRoute: typeof AuthenticatedQuestionnaireRoute
+  AuthenticatedRitualsRoute: typeof AuthenticatedRitualsRoute
+  AuthenticatedTriggersRoute: typeof AuthenticatedTriggersRoute
   AuthenticatedWinsRoute: typeof AuthenticatedWinsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAffirmationsRoute: AuthenticatedAffirmationsRoute,
   AuthenticatedBadgesRoute: AuthenticatedBadgesRoute,
   AuthenticatedFlagsRoute: AuthenticatedFlagsRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedJournalRoute: AuthenticatedJournalRoute,
   AuthenticatedLettersRoute: AuthenticatedLettersRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedQuestionnaireRoute: AuthenticatedQuestionnaireRoute,
+  AuthenticatedRitualsRoute: AuthenticatedRitualsRoute,
+  AuthenticatedTriggersRoute: AuthenticatedTriggersRoute,
   AuthenticatedWinsRoute: AuthenticatedWinsRoute,
 }
 
