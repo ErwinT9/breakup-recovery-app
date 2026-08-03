@@ -16,6 +16,7 @@ import { Route as PaywallRouteImport } from './routes/paywall'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthenticatedAffirmationsRouteImport } from './routes/_authenticated/affirmations'
 import { Route as AuthenticatedBadgesRouteImport } from './routes/_authenticated/badges'
 import { Route as AuthenticatedFlagsRouteImport } from './routes/_authenticated/flags'
@@ -62,6 +63,11 @@ const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
+  id: '/activity',
+  path: '/activity',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAffirmationsRoute =
   AuthenticatedAffirmationsRouteImport.update({
@@ -133,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/activity': typeof AuthenticatedActivityRoute
   '/affirmations': typeof AuthenticatedAffirmationsRoute
   '/badges': typeof AuthenticatedBadgesRoute
   '/flags': typeof AuthenticatedFlagsRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/activity': typeof AuthenticatedActivityRoute
   '/affirmations': typeof AuthenticatedAffirmationsRoute
   '/badges': typeof AuthenticatedBadgesRoute
   '/flags': typeof AuthenticatedFlagsRoute
@@ -175,6 +183,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/activity': typeof AuthenticatedActivityRoute
   '/_authenticated/affirmations': typeof AuthenticatedAffirmationsRoute
   '/_authenticated/badges': typeof AuthenticatedBadgesRoute
   '/_authenticated/flags': typeof AuthenticatedFlagsRoute
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/activity'
     | '/affirmations'
     | '/badges'
     | '/flags'
@@ -217,6 +227,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/activity'
     | '/affirmations'
     | '/badges'
     | '/flags'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/_authenticated/activity'
     | '/_authenticated/affirmations'
     | '/_authenticated/badges'
     | '/_authenticated/flags'
@@ -312,6 +324,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/activity': {
+      id: '/_authenticated/activity'
+      path: '/activity'
+      fullPath: '/activity'
+      preLoaderRoute: typeof AuthenticatedActivityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/affirmations': {
       id: '/_authenticated/affirmations'
@@ -401,6 +420,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedActivityRoute: typeof AuthenticatedActivityRoute
   AuthenticatedAffirmationsRoute: typeof AuthenticatedAffirmationsRoute
   AuthenticatedBadgesRoute: typeof AuthenticatedBadgesRoute
   AuthenticatedFlagsRoute: typeof AuthenticatedFlagsRoute
@@ -416,6 +436,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedActivityRoute: AuthenticatedActivityRoute,
   AuthenticatedAffirmationsRoute: AuthenticatedAffirmationsRoute,
   AuthenticatedBadgesRoute: AuthenticatedBadgesRoute,
   AuthenticatedFlagsRoute: AuthenticatedFlagsRoute,

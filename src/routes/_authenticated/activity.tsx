@@ -87,21 +87,40 @@ function Activity() {
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
 
-  const use = (key: string, fn: (id: string) => Promise<unknown[]>) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useQuery({ queryKey: [key, userId], queryFn: () => fn(userId), enabled: Boolean(userId) });
-
-  const pictures = use("pictures", pictureRepo.list);
-  const journal = use("journal", journalRepo.list);
-  const triggers = use("triggers", triggerRepo.list);
-  const rituals = use("rituals", ritualRepo.list);
-  const affirmations = use("affirmations", affirmationRepo.list);
-  const promises = use("promises", promiseRepo.list);
+  const enabled = Boolean(userId);
+  const pictures = useQuery({
+    queryKey: ["pictures", userId],
+    queryFn: () => pictureRepo.list(userId),
+    enabled,
+  });
+  const journal = useQuery({
+    queryKey: ["journal", userId],
+    queryFn: () => journalRepo.list(userId),
+    enabled,
+  });
+  const triggers = useQuery({
+    queryKey: ["triggers", userId],
+    queryFn: () => triggerRepo.list(userId),
+    enabled,
+  });
+  const rituals = useQuery({
+    queryKey: ["rituals", userId],
+    queryFn: () => ritualRepo.list(userId),
+    enabled,
+  });
+  const affirmations = useQuery({
+    queryKey: ["affirmations", userId],
+    queryFn: () => affirmationRepo.list(userId),
+    enabled,
+  });
+  const promises = useQuery({
+    queryKey: ["promises", userId],
+    queryFn: () => promiseRepo.list(userId),
+    enabled,
+  });
 
   const today = new Date().toISOString().slice(0, 10);
-  const promisedToday = (promises.data ?? []).some(
-    (row) => (row as { promised_on: string }).promised_on === today,
-  );
+  const promisedToday = (promises.data ?? []).some((row) => row.promised_on === today);
 
   const promise = useMutation({
     mutationFn: () => promiseRepo.makeToday(userId),
