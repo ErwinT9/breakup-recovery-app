@@ -370,7 +370,7 @@ function listRepo<T extends { id: string; user_id: string; created_at: string }>
     async list(userId: string): Promise<T[]> {
       return readThrough<T[]>(cacheName, userId, [], async () => {
         const { data, error } = await supabase
-          .from(table)
+          .from(table as "flags")
           .select("*")
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
