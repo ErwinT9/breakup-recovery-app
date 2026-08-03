@@ -390,7 +390,7 @@ function Questionnaire() {
           disabled={saving}
           onClick={() => (step === STEPS - 1 ? void finish() : advance())}
         >
-          {step === STEPS - 1 ? "Start my reset" : "Continue"}
+          {step === STEPS - 1 ? "Start" : "Continue"}
         </Button>
       </div>
     </div>
