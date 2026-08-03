@@ -1,0 +1,187 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute } from "@tanstack/react-router";
+import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+
+import { AppShell } from "@/components/AppShell";
+import { SoftCard } from "@/components/SoftCard";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { letterRepo } from "@/data/repository";
+import { useAuth } from "@/hooks/useAuth";
+import { analytics, humanizeError } from "@/lib/analytics";
+import { EMOTIONS } from "@/lib/content";
+import { haptic } from "@/lib/native/haptics";
+import { cn } from "@/lib/utils";
+
+export const Route = createFileRoute("/_authenticated/letters")({
+  head: () => ({
+    meta: [
+      { title: "Unsent letters | No Contact Tracker" },
+      {
+        name: "description",
+        content: "Write everything you want to say to your ex — privately, and never send it.",
+      },
+      { property: "og:title", content: "Unsent letters | No Contact Tracker" },
+      { property: "og:description", content: "Say it all here instead of in their inbox." },
+    ],
+  }),
+  component: LettersScreen,
+});
+
+function LettersScreen() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [emotion, setEmotion] = useState<string | null>(null);
+
+  useEffect(() => {
+    analytics.screen("letters");
+  }, []);
+
+  const letters = useQuery({
+    queryKey: ["letters", userId],
+    queryFn: () => letterRepo.list(userId),
+    enabled: Boolean(userId),
+  });
+
+  const add = useMutation({
+    mutationFn: async () =>
+      letterRepo.save(userId, { title: title.trim() || null, body: body.trim(), emotion }),
+    onSuccess: (rows) => {
+      queryClient.setQueryData(["letters", userId], rows);
+      haptic.success();
+      toast("Saved. It stays here, with you.");
+      setTitle("");
+      setBody("");
+      setEmotion(null);
+      setOpen(false);
+    },
+    onError: (error) => toast.error(humanizeError(error)),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => letterRepo.remove(userId, id),
+    onSuccess: (rows) => queryClient.setQueryData(["letters", userId], rows),
+    onError: (error) => toast.error(humanizeError(error)),
+  });
+
+  return (
+    <AppShell
+      title="Unsent letters"
+      subtitle="Say it all. Send none of it."
+      action={
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button size="icon" className="press size-11 rounded-full" aria-label="Write a letter">
+              <Plus className="size-5" aria-hidden />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="rounded-3xl">
+            <DialogHeader>
+              <DialogTitle>Write a letter</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="letter-title">Title (optional)</Label>
+                <Input
+                  id="letter-title"
+                  maxLength={80}
+                  value={title}
+                  onChange={(event) => setTitle(event.target.value)}
+                  className="h-12 rounded-2xl"
+                  placeholder="What I never said"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {EMOTIONS.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setEmotion(item)}
+                    className={cn(
+                      "press rounded-full border border-border px-3 py-1.5 text-sm",
+                      emotion === item
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "bg-card",
+                    )}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="letter-body">Your letter</Label>
+                <Textarea
+                  id="letter-body"
+                  maxLength={5000}
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  className="min-h-48 rounded-2xl"
+                  placeholder="I keep wanting to tell you..."
+                />
+              </div>
+              <Button
+                className="press h-12 w-full rounded-2xl"
+                disabled={!body.trim() || add.isPending}
+                onClick={() => add.mutate()}
+              >
+                Save letter
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      }
+    >
+      <div className="space-y-3">
+        {(letters.data ?? []).length === 0 ? (
+          <SoftCard className="bg-lavender">
+            <p className="font-medium text-on-tint">Nothing written yet</p>
+            <p className="mt-1 text-sm text-on-tint/75">
+              The urge to text is usually the urge to be heard. Be heard here.
+            </p>
+          </SoftCard>
+        ) : (
+          (letters.data ?? []).map((letter) => (
+            <SoftCard key={letter.id} className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="font-medium">{letter.title ?? "Untitled letter"}</p>
+                <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
+                  {letter.body}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {letter.emotion ? `${letter.emotion} · ` : ""}
+                  {new Date(letter.created_at).toLocaleDateString()}
+                </p>
+              </div>
+              <button
+                type="button"
+                aria-label="Delete letter"
+                className="press text-muted-foreground"
+                onClick={() => {
+                  haptic.light();
+                  remove.mutate(letter.id);
+                }}
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </button>
+            </SoftCard>
+          ))
+        )}
+      </div>
+    </AppShell>
+  );
+}
