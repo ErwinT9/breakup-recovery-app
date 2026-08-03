@@ -1,8 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Award, Flag, Home, LifeBuoy, Trophy, User } from "lucide-react";
+import { Award, Flag, Home, LifeBuoy, MoreVertical, Trophy } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { OfflineBanner } from "@/components/OfflineBanner";
+import { MoreDrawer } from "@/components/MoreDrawer";
 import { SosToolkit } from "@/components/SosToolkit";
 import { haptic } from "@/lib/native/haptics";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,6 @@ const TABS = [
   { to: "/flags", label: "Flags", icon: Flag },
   { to: "/wins", label: "Wins", icon: Trophy },
   { to: "/badges", label: "Badges", icon: Award },
-  { to: "/profile", label: "Profile", icon: User },
 ] as const;
 
 export function AppShell({
@@ -28,6 +28,7 @@ export function AppShell({
 }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [sosOpen, setSosOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
@@ -55,6 +56,7 @@ export function AppShell({
       </button>
 
       <SosToolkit open={sosOpen} onOpenChange={setSosOpen} />
+      <MoreDrawer open={moreOpen} onOpenChange={setMoreOpen} />
 
       <nav
         aria-label="Primary"
@@ -85,6 +87,29 @@ export function AppShell({
             </Link>
           );
         })}
+        <button
+          type="button"
+          aria-label="More"
+          aria-haspopup="dialog"
+          onClick={() => {
+            haptic.select();
+            setMoreOpen(true);
+          }}
+          className={cn(
+            "press flex min-w-14 flex-col items-center gap-1 rounded-2xl px-2 py-1 text-[0.7rem] font-medium",
+            moreOpen ? "text-primary" : "text-muted-foreground",
+          )}
+        >
+          <span
+            className={cn(
+              "flex h-8 w-14 items-center justify-center rounded-full transition-colors",
+              moreOpen && "bg-mint",
+            )}
+          >
+            <MoreVertical className="size-5" aria-hidden />
+          </span>
+          More
+        </button>
       </nav>
     </div>
   );
