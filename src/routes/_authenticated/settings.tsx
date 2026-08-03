@@ -37,7 +37,10 @@ function SettingsScreen() {
   useEffect(() => analytics.screen("settings"), []);
 
   const backupNow = async () => {
-    if (!online) return toast("You're offline — changes will sync automatically.");
+    if (!online) {
+      toast("You're offline — changes will sync automatically.");
+      return;
+    }
     setSyncing(true);
     await flushQueue();
     await queryClient.invalidateQueries();

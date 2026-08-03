@@ -15,6 +15,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedInsightsRouteImport } from './routes/_authenticated/insights'
+import { Route as AuthenticatedJournalRouteImport } from './routes/_authenticated/journal'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -45,6 +48,21 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInsightsRoute = AuthenticatedInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedJournalRoute = AuthenticatedJournalRouteImport.update({
+  id: '/journal',
+  path: '/journal',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -52,6 +70,9 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/insights': typeof AuthenticatedInsightsRoute
+  '/journal': typeof AuthenticatedJournalRoute
+  '/settings': typeof AuthenticatedSettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -59,6 +80,9 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/insights': typeof AuthenticatedInsightsRoute
+  '/journal': typeof AuthenticatedJournalRoute
+  '/settings': typeof AuthenticatedSettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -68,12 +92,31 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/insights': typeof AuthenticatedInsightsRoute
+  '/_authenticated/journal': typeof AuthenticatedJournalRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/onboarding' | '/reset-password' | '/home'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/reset-password'
+    | '/home'
+    | '/insights'
+    | '/journal'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/onboarding' | '/reset-password' | '/home'
+  to:
+    | '/'
+    | '/auth'
+    | '/onboarding'
+    | '/reset-password'
+    | '/home'
+    | '/insights'
+    | '/journal'
+    | '/settings'
   id:
     | '__root__'
     | '/'
@@ -82,6 +125,9 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/reset-password'
     | '/_authenticated/home'
+    | '/_authenticated/insights'
+    | '/_authenticated/journal'
+    | '/_authenticated/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -136,15 +182,42 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/insights': {
+      id: '/_authenticated/insights'
+      path: '/insights'
+      fullPath: '/insights'
+      preLoaderRoute: typeof AuthenticatedInsightsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/journal': {
+      id: '/_authenticated/journal'
+      path: '/journal'
+      fullPath: '/journal'
+      preLoaderRoute: typeof AuthenticatedJournalRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedInsightsRoute: typeof AuthenticatedInsightsRoute
+  AuthenticatedJournalRoute: typeof AuthenticatedJournalRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedInsightsRoute: AuthenticatedInsightsRoute,
+  AuthenticatedJournalRoute: AuthenticatedJournalRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
