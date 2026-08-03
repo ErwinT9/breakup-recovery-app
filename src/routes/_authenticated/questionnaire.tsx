@@ -318,11 +318,25 @@ function Questionnaire() {
           title: "Want gentle reminders?",
           hint: "A morning nudge and an evening check-in. No spam, ever.",
           body: (
-            <Choice
-              options: undefined as never,
-              value: undefined as never,
-              onSelect: undefined as never,
-            } as never,
+            <div className="space-y-3">
+              <Choice
+                options={["Yes, remind me", "No thanks"]}
+                value={
+                  answers.wants_reminders === null || answers.wants_reminders === undefined
+                    ? null
+                    : answers.wants_reminders
+                      ? "Yes, remind me"
+                      : "No thanks"
+                }
+                onSelect={(option) => advance({ wants_reminders: option === "Yes, remind me" })}
+              />
+              <SoftCard className="bg-sky">
+                <p className="text-sm text-on-tint">
+                  Reminders are scheduled on your phone — they work even without internet.
+                </p>
+              </SoftCard>
+            </div>
+          ),
         };
       default:
         return {
