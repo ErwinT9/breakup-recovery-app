@@ -237,10 +237,10 @@ function SettingsScreen() {
       });
       if (error) throw error;
       await Promise.all([
-        supabase.from("red_flags").delete().eq("user_id", userId),
+        supabase.from("flags").delete().eq("user_id", userId),
         supabase.from("wins").delete().eq("user_id", userId),
         supabase.from("badges").delete().eq("user_id", userId),
-        supabase.from("unsent_letters").delete().eq("user_id", userId),
+        supabase.from("letters").delete().eq("user_id", userId),
         supabase.from("streaks").delete().eq("user_id", userId),
         supabase.from("questionnaire_answers").delete().eq("user_id", userId),
       ]);
