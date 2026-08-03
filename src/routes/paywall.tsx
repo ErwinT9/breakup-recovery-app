@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { BarChart3, BookHeart, CloudUpload, Palette, Target, X } from "lucide-react";
 import { useEffect } from "react";
 
-import { GlassCard } from "@/components/GlassCard";
+import { SoftCard } from "@/components/SoftCard";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { analytics } from "@/lib/analytics";
@@ -52,7 +52,7 @@ function Paywall() {
         7 days free. Cancel anytime before the trial ends and you won't be charged.
       </p>
 
-      <GlassCard className="mt-6 space-y-4 animate-rise">
+      <SoftCard className="mt-6 space-y-4 animate-rise">
         {BENEFITS.map(({ icon: Icon, label }) => (
           <div key={label} className="flex items-center gap-3">
             <span className="flex size-9 items-center justify-center rounded-full bg-primary/15">
@@ -61,7 +61,7 @@ function Paywall() {
             <span className="text-sm">{label}</span>
           </div>
         ))}
-      </GlassCard>
+      </SoftCard>
 
       <div className="mt-auto pt-8">
         <Button
