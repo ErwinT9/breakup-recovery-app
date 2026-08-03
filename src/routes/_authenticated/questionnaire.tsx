@@ -108,7 +108,7 @@ function Questionnaire() {
     setSaving(true);
     try {
       await questionnaireRepo.save(userId, { ...answers, completed: true });
-      await profileRepo.update(userId, {
+      const profile = await profileRepo.update(userId, {
         questionnaire_completed: true,
         display_name: answers.nickname ?? null,
         notifications_enabled: Boolean(answers.wants_reminders),
@@ -120,7 +120,11 @@ function Questionnaire() {
         const granted = await requestNotificationPermission();
         await syncReminders({ enabled: granted, morning: true, evening: true });
       }
-      await queryClient.invalidateQueries();
+      queryClient.setQueryData(["profile", userId], profile);
+      queryClient.setQueryData(["streak", userId], streak);
+      await queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] !== "profile",
+      });
       haptic.success();
       analytics.track("questionnaire_completed");
       void navigate({ to: "/home" });
