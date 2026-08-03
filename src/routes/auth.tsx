@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { BrokenHeart } from "@/components/BrokenHeart";
+import { HeartLeaf } from "@/components/HeartLeaf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/auth")({
       { title: "Sign in | No Contact Tracker" },
       { name: "description", content: "Create your private account or sign in to continue your streak." },
       { property: "og:title", content: "Sign in | No Contact Tracker" },
-      { property: "og:description", content: "Your streak, journals and moods stay private to you." },
+      { property: "og:description", content: "Your streak, flags, wins and letters stay private to you." },
     ],
   }),
   component: AuthScreen,
@@ -112,7 +112,7 @@ function AuthScreen() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 pt-[calc(env(safe-area-inset-top)+3rem)] pb-[calc(env(safe-area-inset-bottom)+2rem)]">
-      <BrokenHeart className="size-12" />
+      <HeartLeaf animate={false} className="size-16" />
       <h1 className="mt-6 text-3xl leading-tight font-semibold tracking-tight">
         {mode === "welcome" ? "Welcome. You made it here." : null}
         {mode === "signup" ? "Create your account" : null}
@@ -121,7 +121,7 @@ function AuthScreen() {
       </h1>
       <p className="mt-3 text-base text-muted-foreground">
         {mode === "welcome"
-          ? "Your streak, journals and moods stay private to you — synced securely and available offline."
+          ? "Your streak, flags, wins and letters stay private to you — synced securely and available offline."
           : "Everything you write is encrypted on your device and tied to your account only."}
       </p>
 

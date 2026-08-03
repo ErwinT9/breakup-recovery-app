@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-import { BrokenHeart } from "@/components/BrokenHeart";
+import { HeartLeaf } from "@/components/HeartLeaf";
 import { useAuth } from "@/hooks/useAuth";
 import { analytics } from "@/lib/analytics";
-import { STORAGE_KEYS, storage } from "@/lib/native/storage";
+import { TAGLINE } from "@/lib/content";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -14,13 +14,10 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Start your no-contact streak, track moods and urges, and rebuild healthy habits after a breakup.",
+          "Track your no-contact streak in real time, log red flags and wins, unlock badges and get through urges with an offline emergency toolkit.",
       },
       { property: "og:title", content: "No Contact Tracker: Breakup Reset" },
-      {
-        property: "og:description",
-        content: "Every day without contact is a step toward healing.",
-      },
+      { property: "og:description", content: TAGLINE },
     ],
   }),
   component: Splash,
@@ -34,13 +31,9 @@ function Splash() {
     analytics.screen("splash");
     let cancelled = false;
 
-    const timer = window.setTimeout(async () => {
+    const timer = window.setTimeout(() => {
       if (loading || cancelled) return;
-      const onboarded = await storage.get<boolean>(STORAGE_KEYS.onboarded, false);
-      if (cancelled) return;
-      if (!onboarded) void navigate({ to: "/onboarding" });
-      else if (!session) void navigate({ to: "/auth" });
-      else void navigate({ to: "/home" });
+      void navigate({ to: session ? "/home" : "/auth" });
     }, 2400);
 
     return () => {
@@ -54,19 +47,17 @@ function Splash() {
       <div className="relative">
         <div
           aria-hidden
-          className="absolute inset-0 -z-10 animate-pulse-glow rounded-full bg-primary/25 blur-3xl"
+          className="animate-soft-pulse absolute inset-0 -z-10 rounded-full bg-mint blur-3xl"
         />
-        <BrokenHeart animate className="size-28" />
+        <HeartLeaf animate className="size-32" />
       </div>
-      <h1 className="mt-8 text-2xl font-semibold tracking-tight text-gradient animate-rise">
+      <h1 className="animate-rise mt-10 text-2xl font-semibold tracking-tight">
         No Contact Tracker
       </h1>
       <p className="text-sm font-medium tracking-[0.3em] text-muted-foreground uppercase">
         Breakup Reset
       </p>
-      <p className="mt-6 max-w-xs text-sm text-muted-foreground animate-rise">
-        Every day without contact is a step toward healing.
-      </p>
+      <p className="animate-rise mt-6 max-w-xs text-sm text-muted-foreground">{TAGLINE}</p>
     </div>
   );
 }
