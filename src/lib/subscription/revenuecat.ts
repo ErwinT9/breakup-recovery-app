@@ -1,5 +1,3 @@
-import { Purchases, LOG_LEVEL } from "@revenuecat/purchases-capacitor";
-
 import { analytics } from "@/lib/analytics";
 import { isNative, safeNative } from "@/lib/native/platform";
 import { STORAGE_KEYS, storage } from "@/lib/native/storage";
@@ -23,6 +21,14 @@ const DEFAULT_STATE: EntitlementState = {
 
 let configured = false;
 
+/**
+ * The RevenueCat plugin registers itself against browser globals on import,
+ * so it is only loaded lazily inside native code paths (never during SSR).
+ */
+async function rc() {
+  return import("@revenuecat/purchases-capacitor");
+}
+
 /** Reads the locally cached entitlement so premium keeps working offline. */
 export async function getCachedEntitlement(): Promise<EntitlementState> {
   return storage.get<EntitlementState>(STORAGE_KEYS.entitlement, DEFAULT_STATE);
@@ -36,6 +42,7 @@ async function cacheEntitlement(state: EntitlementState): Promise<EntitlementSta
 export async function configureRevenueCat(appUserId?: string): Promise<void> {
   if (!isNative() || configured) return;
   await safeNative(async () => {
+    const { Purchases, LOG_LEVEL } = await rc();
     await Purchases.setLogLevel({ level: import.meta.env.DEV ? LOG_LEVEL.DEBUG : LOG_LEVEL.ERROR });
     await Purchases.configure(
       appUserId
@@ -50,12 +57,14 @@ export async function identifyUser(appUserId: string): Promise<void> {
   if (!isNative()) return;
   await safeNative(async () => {
     await configureRevenueCat(appUserId);
+    const { Purchases } = await rc();
     await Purchases.logIn({ appUserID: appUserId });
   });
 }
 
 export async function logOutRevenueCat(): Promise<void> {
   await safeNative(async () => {
+    const { Purchases } = await rc();
     await Purchases.logOut();
   });
   await cacheEntitlement(DEFAULT_STATE);
@@ -78,6 +87,7 @@ export async function refreshEntitlement(): Promise<EntitlementState> {
   if (!isNative()) return getCachedEntitlement();
   try {
     await configureRevenueCat();
+    const { Purchases } = await rc();
     const { customerInfo } = await Purchases.getCustomerInfo();
     return cacheEntitlement(toState(customerInfo));
   } catch (error) {
@@ -98,6 +108,7 @@ export async function presentPaywall(): Promise<PurchaseOutcome> {
   if (!isNative()) return { status: "unavailable" };
   try {
     await configureRevenueCat();
+    const { Purchases } = await rc();
     const offerings = await Purchases.getOfferings();
     const pkg = offerings.current?.availablePackages?.[0];
     if (!pkg) return { status: "unavailable" };
@@ -123,6 +134,7 @@ export async function restorePurchases(): Promise<PurchaseOutcome> {
   if (!isNative()) return { status: "unavailable" };
   try {
     await configureRevenueCat();
+    const { Purchases } = await rc();
     const { customerInfo } = await Purchases.restorePurchases();
     const state = await cacheEntitlement(toState(customerInfo));
     return { status: "success", state };
