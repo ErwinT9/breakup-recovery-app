@@ -12,7 +12,7 @@ export const Route = createFileRoute("/paywall")({
   head: () => ({
     meta: [
       { title: "Premium | No Contact Tracker" },
-      { name: "description", content: "Unlock unlimited journaling, deep analytics, habit challenges and cloud backup." },
+      { name: "description", content: "Unlock unlimited flags and letters, every badge, advanced reminders and cloud backup." },
       { property: "og:title", content: "Premium | No Contact Tracker" },
       { property: "og:description", content: "7 days free, then cancel anytime." },
     ],
@@ -21,9 +21,9 @@ export const Route = createFileRoute("/paywall")({
 });
 
 const BENEFITS = [
-  { icon: BookHeart, label: "Unlimited private journaling" },
+  { icon: BookHeart, label: "Unlimited flags, wins and letters" },
   { icon: BarChart3, label: "Mood and urge analytics" },
-  { icon: Target, label: "30-day habit challenges" },
+  { icon: Target, label: "Full emergency toolkit and badges" },
   { icon: CloudUpload, label: "Encrypted cloud backup" },
   { icon: Palette, label: "Premium themes and widgets" },
 ];
