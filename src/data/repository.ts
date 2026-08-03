@@ -4,7 +4,7 @@ import { STORAGE_KEYS, storage } from "@/lib/native/storage";
 import { isOnline } from "@/lib/offline/network";
 import { enqueue, type SyncTable } from "@/lib/offline/syncQueue";
 
-import type { HabitCheckin, JournalEntry, MoodLog, Profile, Streak } from "./types";
+import type { BadgeRow, Flag, Letter, Profile, QuestionnaireAnswers, Streak, Win } from "./types";
 
 function newId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -12,6 +12,8 @@ function newId(): string {
 }
 
 export const localId = newId;
+
+const CACHES = ["profile", "streak", "questionnaire", "flags", "wins", "badges", "letters"] as const;
 
 async function cacheRead<T>(name: string, userId: string, fallback: T): Promise<T> {
   return storage.get<T>(STORAGE_KEYS.cache(name, userId), fallback);
@@ -22,8 +24,8 @@ async function cacheWrite(name: string, userId: string, value: unknown): Promise
 }
 
 /**
- * Offline-first read: always resolve from cache instantly, then refresh from
- * the server when a connection exists. Never throws to the UI.
+ * Offline-first read: resolve from the local cache instantly, then refresh from
+ * Supabase when a connection exists. Never throws to the UI.
  */
 async function readThrough<T>(
   name: string,
@@ -49,22 +51,46 @@ async function writeThrough(
   payload: Record<string, unknown>,
   onConflict?: string,
 ): Promise<void> {
-  await enqueue(onConflict ? { id, table, op: "upsert", payload, onConflict } : { id, table, op: "upsert", payload });
+  await enqueue(
+    onConflict
+      ? { id, table, op: "upsert", payload, onConflict }
+      : { id, table, op: "upsert", payload },
+  );
+}
+
+export function emptyProfile(userId: string): Profile {
+  return {
+    id: userId,
+    display_name: null,
+    bio: null,
+    avatar_url: null,
+    recovery_started_at: new Date().toISOString(),
+    notifications_enabled: false,
+    morning_reminder: true,
+    evening_reminder: true,
+    push_token: null,
+    questionnaire_completed: false,
+    is_premium: false,
+  };
 }
 
 export const profileRepo = {
   async get(userId: string): Promise<Profile | null> {
     return readThrough<Profile | null>("profile", userId, null, async () => {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
       if (error) throw error;
-      return (data as Profile) ?? null;
+      return data ? (data as unknown as Profile) : null;
     });
   },
-  async update(userId: string, patch: Partial<Profile>): Promise<Profile | null> {
+  async update(userId: string, patch: Partial<Profile>): Promise<Profile> {
     const current = await cacheRead<Profile | null>("profile", userId, null);
-    const next = { ...(current ?? { id: userId, display_name: null, avatar_url: null, onboarded: false, is_premium: false }), ...patch } as Profile;
+    const next: Profile = { ...(current ?? emptyProfile(userId)), ...patch, id: userId };
     await cacheWrite("profile", userId, next);
-    await writeThrough("profiles", userId, { ...next, id: userId });
+    await writeThrough("profiles", userId, { ...next });
     return next;
   },
 };
@@ -72,9 +98,13 @@ export const profileRepo = {
 export const streakRepo = {
   async get(userId: string): Promise<Streak | null> {
     return readThrough<Streak | null>("streak", userId, null, async () => {
-      const { data, error } = await supabase.from("streaks").select("*").eq("user_id", userId).maybeSingle();
+      const { data, error } = await supabase
+        .from("streaks")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
       if (error) throw error;
-      return (data as Streak) ?? null;
+      return data ? (data as unknown as Streak) : null;
     });
   },
   async save(userId: string, streak: Streak): Promise<Streak> {
@@ -82,125 +112,222 @@ export const streakRepo = {
     await writeThrough("streaks", streak.id, { ...streak, user_id: userId }, "user_id");
     return streak;
   },
-  async reset(userId: string, current: Streak, reason: string, daysLasted: number): Promise<Streak> {
+  async ensure(userId: string, startedAt?: string): Promise<Streak> {
+    const existing = await streakRepo.get(userId);
+    if (existing) return existing;
+    const created: Streak = {
+      id: newId(),
+      user_id: userId,
+      started_at: startedAt ?? new Date().toISOString(),
+      best_days: 0,
+      relapse_count: 0,
+      ex_name: null,
+    };
+    return streakRepo.save(userId, created);
+  },
+  async reset(userId: string, current: Streak, daysLasted: number): Promise<Streak> {
     const next: Streak = {
       ...current,
       started_at: new Date().toISOString(),
       best_days: Math.max(current.best_days, daysLasted),
       relapse_count: current.relapse_count + 1,
     };
-    await streakRepo.save(userId, next);
-    const relapseId = newId();
-    await writeThrough("relapses", relapseId, {
-      id: relapseId,
-      user_id: userId,
-      reason,
-      days_lasted: daysLasted,
-      occurred_at: new Date().toISOString(),
+    return streakRepo.save(userId, next);
+  },
+  async setStart(userId: string, current: Streak, startedAt: string): Promise<Streak> {
+    return streakRepo.save(userId, { ...current, started_at: startedAt });
+  },
+};
+
+export const questionnaireRepo = {
+  async get(userId: string): Promise<QuestionnaireAnswers | null> {
+    return readThrough<QuestionnaireAnswers | null>("questionnaire", userId, null, async () => {
+      const { data, error } = await supabase
+        .from("questionnaire_answers")
+        .select("*")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? (data as unknown as QuestionnaireAnswers) : null;
     });
+  },
+  async save(
+    userId: string,
+    patch: Partial<QuestionnaireAnswers>,
+  ): Promise<QuestionnaireAnswers> {
+    const current = await cacheRead<QuestionnaireAnswers | null>("questionnaire", userId, null);
+    const next: QuestionnaireAnswers = {
+      id: current?.id ?? newId(),
+      user_id: userId,
+      nickname: null,
+      age_range: null,
+      gender: null,
+      relationship_length: null,
+      who_ended: null,
+      last_contact_at: null,
+      reasons: [],
+      checks_social: null,
+      difficulty_today: null,
+      biggest_goal: null,
+      wants_reminders: null,
+      referral_source: null,
+      completed: false,
+      ...(current ?? {}),
+      ...patch,
+    };
+    await cacheWrite("questionnaire", userId, next);
+    await writeThrough("questionnaire_answers", next.id, { ...next }, "user_id");
     return next;
   },
 };
 
-export const journalRepo = {
-  async list(userId: string): Promise<JournalEntry[]> {
-    return readThrough<JournalEntry[]>("journal", userId, [], async () => {
+export const flagRepo = {
+  async list(userId: string): Promise<Flag[]> {
+    return readThrough<Flag[]>("flags", userId, [], async () => {
       const { data, error } = await supabase
-        .from("journal_entries")
+        .from("flags")
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
-        .limit(200);
-      if (error) throw error;
-      return (data ?? []) as JournalEntry[];
-    });
-  },
-  async create(userId: string, input: Pick<JournalEntry, "title" | "body" | "mood" | "urge_level">) {
-    const entry: JournalEntry = {
-      id: newId(),
-      user_id: userId,
-      created_at: new Date().toISOString(),
-      ...input,
-    };
-    const list = await cacheRead<JournalEntry[]>("journal", userId, []);
-    await cacheWrite("journal", userId, [entry, ...list]);
-    await writeThrough("journal_entries", entry.id, entry);
-    return entry;
-  },
-  async remove(userId: string, id: string) {
-    const list = await cacheRead<JournalEntry[]>("journal", userId, []);
-    await cacheWrite("journal", userId, list.filter((entry) => entry.id !== id));
-    await enqueue({ id, table: "journal_entries", op: "delete", payload: { id } });
-  },
-};
-
-export const moodRepo = {
-  async list(userId: string): Promise<MoodLog[]> {
-    return readThrough<MoodLog[]>("moods", userId, [], async () => {
-      const { data, error } = await supabase
-        .from("mood_logs")
-        .select("*")
-        .eq("user_id", userId)
-        .order("logged_on", { ascending: false })
-        .limit(120);
-      if (error) throw error;
-      return (data ?? []) as MoodLog[];
-    });
-  },
-  async log(userId: string, score: number, note?: string): Promise<MoodLog> {
-    const today = new Date().toISOString().slice(0, 10);
-    const list = await cacheRead<MoodLog[]>("moods", userId, []);
-    const existing = list.find((entry) => entry.logged_on === today);
-    const entry: MoodLog = {
-      id: existing?.id ?? newId(),
-      user_id: userId,
-      score,
-      note: note ?? null,
-      logged_on: today,
-    };
-    await cacheWrite("moods", userId, [entry, ...list.filter((item) => item.logged_on !== today)]);
-    await writeThrough("mood_logs", entry.id, entry, "user_id,logged_on");
-    return entry;
-  },
-};
-
-export const habitRepo = {
-  async list(userId: string): Promise<HabitCheckin[]> {
-    return readThrough<HabitCheckin[]>("habits", userId, [], async () => {
-      const { data, error } = await supabase
-        .from("habit_checkins")
-        .select("*")
-        .eq("user_id", userId)
-        .order("checked_on", { ascending: false })
         .limit(300);
       if (error) throw error;
-      return (data ?? []) as HabitCheckin[];
+      return (data ?? []) as unknown as Flag[];
     });
   },
-  async toggle(userId: string, habitKey: string): Promise<HabitCheckin[]> {
-    const today = new Date().toISOString().slice(0, 10);
-    const list = await cacheRead<HabitCheckin[]>("habits", userId, []);
-    const existing = list.find((item) => item.habit_key === habitKey && item.checked_on === today);
+  async save(userId: string, input: Partial<Flag> & { title: string }): Promise<Flag[]> {
+    const list = await cacheRead<Flag[]>("flags", userId, []);
+    const flag: Flag = {
+      id: input.id ?? newId(),
+      user_id: userId,
+      title: input.title,
+      category: input.category ?? "other",
+      note: input.note ?? null,
+      created_at: input.created_at ?? new Date().toISOString(),
+    };
+    const next = [flag, ...list.filter((item) => item.id !== flag.id)];
+    await cacheWrite("flags", userId, next);
+    await writeThrough("flags", flag.id, { ...flag });
+    return next;
+  },
+  async remove(userId: string, id: string): Promise<Flag[]> {
+    const list = await cacheRead<Flag[]>("flags", userId, []);
+    const next = list.filter((item) => item.id !== id);
+    await cacheWrite("flags", userId, next);
+    await enqueue({ id, table: "flags", op: "delete", payload: { id } });
+    return next;
+  },
+};
 
-    if (existing) {
-      const next = list.filter((item) => item.id !== existing.id);
-      await cacheWrite("habits", userId, next);
-      await enqueue({ id: existing.id, table: "habit_checkins", op: "delete", payload: { id: existing.id } });
-      return next;
+export const winRepo = {
+  async list(userId: string): Promise<Win[]> {
+    return readThrough<Win[]>("wins", userId, [], async () => {
+      const { data, error } = await supabase
+        .from("wins")
+        .select("*")
+        .eq("user_id", userId)
+        .order("achieved_on", { ascending: false })
+        .limit(400);
+      if (error) throw error;
+      return (data ?? []) as unknown as Win[];
+    });
+  },
+  async save(userId: string, input: Partial<Win> & { title: string }): Promise<Win[]> {
+    const list = await cacheRead<Win[]>("wins", userId, []);
+    const win: Win = {
+      id: input.id ?? newId(),
+      user_id: userId,
+      title: input.title,
+      note: input.note ?? null,
+      achieved_on: input.achieved_on ?? new Date().toISOString().slice(0, 10),
+      created_at: input.created_at ?? new Date().toISOString(),
+    };
+    const next = [win, ...list.filter((item) => item.id !== win.id)];
+    await cacheWrite("wins", userId, next);
+    await writeThrough("wins", win.id, { ...win });
+    return next;
+  },
+  async remove(userId: string, id: string): Promise<Win[]> {
+    const list = await cacheRead<Win[]>("wins", userId, []);
+    const next = list.filter((item) => item.id !== id);
+    await cacheWrite("wins", userId, next);
+    await enqueue({ id, table: "wins", op: "delete", payload: { id } });
+    return next;
+  },
+};
+
+export const badgeRepo = {
+  async list(userId: string): Promise<BadgeRow[]> {
+    return readThrough<BadgeRow[]>("badges", userId, [], async () => {
+      const { data, error } = await supabase
+        .from("badges")
+        .select("*")
+        .eq("user_id", userId)
+        .order("unlocked_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as BadgeRow[];
+    });
+  },
+  async unlock(userId: string, badgeKeys: string[]): Promise<BadgeRow[]> {
+    const list = await cacheRead<BadgeRow[]>("badges", userId, []);
+    const owned = new Set(list.map((badge) => badge.badge_key));
+    const fresh = badgeKeys.filter((key) => !owned.has(key));
+    if (fresh.length === 0) return list;
+
+    const rows: BadgeRow[] = fresh.map((key) => ({
+      id: newId(),
+      user_id: userId,
+      badge_key: key,
+      unlocked_at: new Date().toISOString(),
+    }));
+    const next = [...rows, ...list];
+    await cacheWrite("badges", userId, next);
+    for (const row of rows) {
+      await writeThrough("badges", row.id, { ...row }, "user_id,badge_key");
     }
+    return next;
+  },
+};
 
-    const entry: HabitCheckin = { id: newId(), user_id: userId, habit_key: habitKey, checked_on: today };
-    const next = [entry, ...list];
-    await cacheWrite("habits", userId, next);
-    await writeThrough("habit_checkins", entry.id, entry, "user_id,habit_key,checked_on");
+export const letterRepo = {
+  async list(userId: string): Promise<Letter[]> {
+    return readThrough<Letter[]>("letters", userId, [], async () => {
+      const { data, error } = await supabase
+        .from("letters")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(300);
+      if (error) throw error;
+      return (data ?? []) as unknown as Letter[];
+    });
+  },
+  async save(userId: string, input: Partial<Letter> & { body: string }): Promise<Letter[]> {
+    const list = await cacheRead<Letter[]>("letters", userId, []);
+    const now = new Date().toISOString();
+    const letter: Letter = {
+      id: input.id ?? newId(),
+      user_id: userId,
+      title: input.title ?? null,
+      body: input.body,
+      emotion: input.emotion ?? null,
+      is_draft: input.is_draft ?? false,
+      created_at: input.created_at ?? now,
+      updated_at: now,
+    };
+    const next = [letter, ...list.filter((item) => item.id !== letter.id)];
+    await cacheWrite("letters", userId, next);
+    await writeThrough("letters", letter.id, { ...letter });
+    return next;
+  },
+  async remove(userId: string, id: string): Promise<Letter[]> {
+    const list = await cacheRead<Letter[]>("letters", userId, []);
+    const next = list.filter((item) => item.id !== id);
+    await cacheWrite("letters", userId, next);
+    await enqueue({ id, table: "letters", op: "delete", payload: { id } });
     return next;
   },
 };
 
 export async function clearUserCache(userId: string): Promise<void> {
-  await Promise.all(
-    ["profile", "streak", "journal", "moods", "habits"].map((name) =>
-      storage.remove(STORAGE_KEYS.cache(name, userId)),
-    ),
-  );
+  await Promise.all(CACHES.map((name) => storage.remove(STORAGE_KEYS.cache(name, userId))));
 }
