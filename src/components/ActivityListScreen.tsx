@@ -1,0 +1,170 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { AppShell } from "@/components/AppShell";
+import { SoftCard } from "@/components/SoftCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/hooks/useAuth";
+import { humanizeError } from "@/lib/analytics";
+import { haptic } from "@/lib/native/haptics";
+
+type Row = { id: string; created_at: string } & Record<string, unknown>;
+
+export type SimpleRepo = {
+  list: (userId: string) => Promise<Row[]>;
+  save: (userId: string, input: Record<string, unknown>) => Promise<Row[]>;
+  remove: (userId: string, id: string) => Promise<Row[]>;
+};
+
+export function ActivityListScreen({
+  title,
+  subtitle,
+  cacheKey,
+  repo,
+  mainField,
+  mainPlaceholder,
+  noteField,
+  notePlaceholder,
+  multiline = false,
+  suggestions = [],
+  emptyText,
+}: {
+  title: string;
+  subtitle: string;
+  cacheKey: string;
+  repo: SimpleRepo;
+  mainField: string;
+  mainPlaceholder: string;
+  noteField?: string;
+  notePlaceholder?: string;
+  multiline?: boolean;
+  suggestions?: string[];
+  emptyText: string;
+}) {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+  const queryClient = useQueryClient();
+  const [main, setMain] = useState("");
+  const [note, setNote] = useState("");
+
+  const items = useQuery({
+    queryKey: [cacheKey, userId],
+    queryFn: () => repo.list(userId),
+    enabled: Boolean(userId),
+  });
+
+  const add = useMutation({
+    mutationFn: async (value: string) => {
+      const payload: Record<string, unknown> = { [mainField]: value };
+      if (noteField && note.trim()) payload[noteField] = note.trim();
+      return repo.save(userId, payload);
+    },
+    onSuccess: (rows) => {
+      queryClient.setQueryData([cacheKey, userId], rows);
+      setMain("");
+      setNote("");
+      haptic.success();
+    },
+    onError: (error) => toast.error(humanizeError(error)),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => repo.remove(userId, id),
+    onSuccess: (rows) => queryClient.setQueryData([cacheKey, userId], rows),
+  });
+
+  const list = items.data ?? [];
+
+  return (
+    <AppShell title={title} subtitle={subtitle}>
+      <SoftCard className="space-y-3">
+        {multiline ? (
+          <Textarea
+            value={main}
+            onChange={(event) => setMain(event.target.value)}
+            placeholder={mainPlaceholder}
+            className="min-h-28 rounded-2xl"
+          />
+        ) : (
+          <Input
+            value={main}
+            onChange={(event) => setMain(event.target.value)}
+            placeholder={mainPlaceholder}
+            className="h-12 rounded-2xl"
+          />
+        )}
+        {noteField ? (
+          <Input
+            value={note}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder={notePlaceholder ?? "Add a note (optional)"}
+            className="h-12 rounded-2xl"
+          />
+        ) : null}
+        <Button
+          className="press h-12 w-full rounded-2xl"
+          disabled={!main.trim() || add.isPending}
+          onClick={() => add.mutate(main.trim())}
+        >
+          Add
+        </Button>
+      </SoftCard>
+
+      {suggestions.length > 0 ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {suggestions.map((suggestion) => (
+            <button
+              key={suggestion}
+              type="button"
+              onClick={() => {
+                haptic.select();
+                add.mutate(suggestion);
+              }}
+              className="press rounded-full border border-border bg-card px-4 py-2 text-sm"
+            >
+              {suggestion}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <ul className="mt-5 space-y-3">
+        {list.length === 0 ? (
+          <p className="px-1 text-sm text-muted-foreground">{emptyText}</p>
+        ) : null}
+        {list.map((item) => (
+          <SoftCard as="li" key={item.id} className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium break-words whitespace-pre-wrap">
+                {String(item[mainField] ?? "")}
+              </p>
+              {noteField && item[noteField] ? (
+                <p className="mt-1 text-sm text-muted-foreground break-words">
+                  {String(item[noteField])}
+                </p>
+              ) : null}
+              <p className="mt-2 text-xs text-muted-foreground">
+                {new Date(item.created_at).toLocaleDateString()}
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Delete"
+              onClick={() => {
+                haptic.light();
+                remove.mutate(item.id);
+              }}
+              className="press mt-0.5 text-muted-foreground"
+            >
+              <Trash2 className="size-4" aria-hidden />
+            </button>
+          </SoftCard>
+        ))}
+      </ul>
+    </AppShell>
+  );
+}

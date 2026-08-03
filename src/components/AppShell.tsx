@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Award, Flag, Home, LifeBuoy, MoreVertical, Trophy } from "lucide-react";
+import { Award, Flag, Home, LayoutGrid, LifeBuoy, Menu, Trophy } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -13,6 +13,7 @@ const TABS = [
   { to: "/flags", label: "Flags", icon: Flag },
   { to: "/wins", label: "Wins", icon: Trophy },
   { to: "/badges", label: "Badges", icon: Award },
+  { to: "/activity", label: "Activity", icon: LayoutGrid },
 ] as const;
 
 export function AppShell({
@@ -32,8 +33,20 @@ export function AppShell({
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">
-      <header className="flex items-start justify-between gap-3 px-5 pt-[calc(env(safe-area-inset-top)+1.5rem)]">
-        <div>
+      <header className="flex items-start gap-3 px-5 pt-[calc(env(safe-area-inset-top)+1.5rem)]">
+        <button
+          type="button"
+          aria-label="Open menu"
+          aria-haspopup="dialog"
+          onClick={() => {
+            haptic.select();
+            setMoreOpen(true);
+          }}
+          className="press mt-1 flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-foreground"
+        >
+          <Menu className="size-5" aria-hidden />
+        </button>
+        <div className="min-w-0 flex-1">
           <h1 className="text-[1.75rem] font-semibold tracking-tight">{title}</h1>
           {subtitle ? <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p> : null}
         </div>
@@ -87,29 +100,6 @@ export function AppShell({
             </Link>
           );
         })}
-        <button
-          type="button"
-          aria-label="More"
-          aria-haspopup="dialog"
-          onClick={() => {
-            haptic.select();
-            setMoreOpen(true);
-          }}
-          className={cn(
-            "press flex min-w-14 flex-col items-center gap-1 rounded-2xl px-2 py-1 text-[0.7rem] font-medium",
-            moreOpen ? "text-primary" : "text-muted-foreground",
-          )}
-        >
-          <span
-            className={cn(
-              "flex h-8 w-14 items-center justify-center rounded-full transition-colors",
-              moreOpen && "bg-mint",
-            )}
-          >
-            <MoreVertical className="size-5" aria-hidden />
-          </span>
-          More
-        </button>
       </nav>
     </div>
   );
