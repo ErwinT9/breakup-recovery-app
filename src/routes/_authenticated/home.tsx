@@ -99,9 +99,9 @@ function HomeScreen() {
   });
 
   useEffect(() => {
-    if (profile.isLoading || !profile.data) return;
+    if (profile.isLoading || profile.isFetching || !profile.data) return;
     if (!profile.data.questionnaire_completed) void navigate({ to: "/questionnaire" });
-  }, [profile.isLoading, profile.data, navigate]);
+  }, [profile.isLoading, profile.isFetching, profile.data, navigate]);
 
   const startedAt = streak.data?.started_at;
   const elapsed = elapsedSince(startedAt ?? new Date().toISOString());
