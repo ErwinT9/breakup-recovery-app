@@ -16,8 +16,10 @@ import { Route as PaywallRouteImport } from './routes/paywall'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AuthenticatedBadgesRouteImport } from './routes/_authenticated/badges'
 import { Route as AuthenticatedFlagsRouteImport } from './routes/_authenticated/flags'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedLettersRouteImport } from './routes/_authenticated/letters'
 import { Route as AuthenticatedQuestionnaireRouteImport } from './routes/_authenticated/questionnaire'
 import { Route as AuthenticatedWinsRouteImport } from './routes/_authenticated/wins'
 
@@ -55,6 +57,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedBadgesRoute = AuthenticatedBadgesRouteImport.update({
+  id: '/badges',
+  path: '/badges',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFlagsRoute = AuthenticatedFlagsRouteImport.update({
   id: '/flags',
   path: '/flags',
@@ -63,6 +70,11 @@ const AuthenticatedFlagsRoute = AuthenticatedFlagsRouteImport.update({
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedLettersRoute = AuthenticatedLettersRouteImport.update({
+  id: '/letters',
+  path: '/letters',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedQuestionnaireRoute =
@@ -84,8 +96,10 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/badges': typeof AuthenticatedBadgesRoute
   '/flags': typeof AuthenticatedFlagsRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/letters': typeof AuthenticatedLettersRoute
   '/questionnaire': typeof AuthenticatedQuestionnaireRoute
   '/wins': typeof AuthenticatedWinsRoute
 }
@@ -96,8 +110,10 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/badges': typeof AuthenticatedBadgesRoute
   '/flags': typeof AuthenticatedFlagsRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/letters': typeof AuthenticatedLettersRoute
   '/questionnaire': typeof AuthenticatedQuestionnaireRoute
   '/wins': typeof AuthenticatedWinsRoute
 }
@@ -110,8 +126,10 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/_authenticated/badges': typeof AuthenticatedBadgesRoute
   '/_authenticated/flags': typeof AuthenticatedFlagsRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/letters': typeof AuthenticatedLettersRoute
   '/_authenticated/questionnaire': typeof AuthenticatedQuestionnaireRoute
   '/_authenticated/wins': typeof AuthenticatedWinsRoute
 }
@@ -124,8 +142,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/badges'
     | '/flags'
     | '/home'
+    | '/letters'
     | '/questionnaire'
     | '/wins'
   fileRoutesByTo: FileRoutesByTo
@@ -136,8 +156,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/badges'
     | '/flags'
     | '/home'
+    | '/letters'
     | '/questionnaire'
     | '/wins'
   id:
@@ -149,8 +171,10 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/_authenticated/badges'
     | '/_authenticated/flags'
     | '/_authenticated/home'
+    | '/_authenticated/letters'
     | '/_authenticated/questionnaire'
     | '/_authenticated/wins'
   fileRoutesById: FileRoutesById
@@ -216,6 +240,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/badges': {
+      id: '/_authenticated/badges'
+      path: '/badges'
+      fullPath: '/badges'
+      preLoaderRoute: typeof AuthenticatedBadgesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/flags': {
       id: '/_authenticated/flags'
       path: '/flags'
@@ -228,6 +259,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/letters': {
+      id: '/_authenticated/letters'
+      path: '/letters'
+      fullPath: '/letters'
+      preLoaderRoute: typeof AuthenticatedLettersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/questionnaire': {
@@ -248,15 +286,19 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedBadgesRoute: typeof AuthenticatedBadgesRoute
   AuthenticatedFlagsRoute: typeof AuthenticatedFlagsRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedLettersRoute: typeof AuthenticatedLettersRoute
   AuthenticatedQuestionnaireRoute: typeof AuthenticatedQuestionnaireRoute
   AuthenticatedWinsRoute: typeof AuthenticatedWinsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedBadgesRoute: AuthenticatedBadgesRoute,
   AuthenticatedFlagsRoute: AuthenticatedFlagsRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedLettersRoute: AuthenticatedLettersRoute,
   AuthenticatedQuestionnaireRoute: AuthenticatedQuestionnaireRoute,
   AuthenticatedWinsRoute: AuthenticatedWinsRoute,
 }
