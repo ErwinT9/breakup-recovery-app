@@ -20,6 +20,7 @@ import { Route as AuthenticatedBadgesRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedFlagsRouteImport } from './routes/_authenticated/flags'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedLettersRouteImport } from './routes/_authenticated/letters'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedQuestionnaireRouteImport } from './routes/_authenticated/questionnaire'
 import { Route as AuthenticatedWinsRouteImport } from './routes/_authenticated/wins'
 
@@ -77,6 +78,11 @@ const AuthenticatedLettersRoute = AuthenticatedLettersRouteImport.update({
   path: '/letters',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedQuestionnaireRoute =
   AuthenticatedQuestionnaireRouteImport.update({
     id: '/questionnaire',
@@ -100,6 +106,7 @@ export interface FileRoutesByFullPath {
   '/flags': typeof AuthenticatedFlagsRoute
   '/home': typeof AuthenticatedHomeRoute
   '/letters': typeof AuthenticatedLettersRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/questionnaire': typeof AuthenticatedQuestionnaireRoute
   '/wins': typeof AuthenticatedWinsRoute
 }
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/flags': typeof AuthenticatedFlagsRoute
   '/home': typeof AuthenticatedHomeRoute
   '/letters': typeof AuthenticatedLettersRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/questionnaire': typeof AuthenticatedQuestionnaireRoute
   '/wins': typeof AuthenticatedWinsRoute
 }
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/_authenticated/flags': typeof AuthenticatedFlagsRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/letters': typeof AuthenticatedLettersRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/questionnaire': typeof AuthenticatedQuestionnaireRoute
   '/_authenticated/wins': typeof AuthenticatedWinsRoute
 }
@@ -146,6 +155,7 @@ export interface FileRouteTypes {
     | '/flags'
     | '/home'
     | '/letters'
+    | '/profile'
     | '/questionnaire'
     | '/wins'
   fileRoutesByTo: FileRoutesByTo
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/flags'
     | '/home'
     | '/letters'
+    | '/profile'
     | '/questionnaire'
     | '/wins'
   id:
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/_authenticated/flags'
     | '/_authenticated/home'
     | '/_authenticated/letters'
+    | '/_authenticated/profile'
     | '/_authenticated/questionnaire'
     | '/_authenticated/wins'
   fileRoutesById: FileRoutesById
@@ -268,6 +280,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLettersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/questionnaire': {
       id: '/_authenticated/questionnaire'
       path: '/questionnaire'
@@ -290,6 +309,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFlagsRoute: typeof AuthenticatedFlagsRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedLettersRoute: typeof AuthenticatedLettersRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedQuestionnaireRoute: typeof AuthenticatedQuestionnaireRoute
   AuthenticatedWinsRoute: typeof AuthenticatedWinsRoute
 }
@@ -299,6 +319,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFlagsRoute: AuthenticatedFlagsRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedLettersRoute: AuthenticatedLettersRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedQuestionnaireRoute: AuthenticatedQuestionnaireRoute,
   AuthenticatedWinsRoute: AuthenticatedWinsRoute,
 }
