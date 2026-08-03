@@ -4,7 +4,21 @@ import { STORAGE_KEYS, storage } from "@/lib/native/storage";
 import { isOnline } from "@/lib/offline/network";
 import { enqueue, type SyncTable } from "@/lib/offline/syncQueue";
 
-import type { BadgeRow, Flag, Letter, Profile, QuestionnaireAnswers, Streak, Win } from "./types";
+import type {
+  Affirmation,
+  BadgeRow,
+  DailyPromise,
+  Flag,
+  JournalEntry,
+  Letter,
+  Picture,
+  Profile,
+  QuestionnaireAnswers,
+  Ritual,
+  Streak,
+  Trigger,
+  Win,
+} from "./types";
 
 function newId(): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -13,7 +27,21 @@ function newId(): string {
 
 export const localId = newId;
 
-const CACHES = ["profile", "streak", "questionnaire", "flags", "wins", "badges", "letters"] as const;
+const CACHES = [
+  "profile",
+  "streak",
+  "questionnaire",
+  "flags",
+  "wins",
+  "badges",
+  "letters",
+  "promises",
+  "pictures",
+  "affirmations",
+  "rituals",
+  "triggers",
+  "journal",
+] as const;
 
 async function cacheRead<T>(name: string, userId: string, fallback: T): Promise<T> {
   return storage.get<T>(STORAGE_KEYS.cache(name, userId), fallback);
