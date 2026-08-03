@@ -498,6 +498,17 @@ function SettingsScreen() {
             <RefreshCw className="size-5 text-muted-foreground" aria-hidden />
             <span className="flex-1 text-sm font-medium">Restore purchases</span>
           </button>
+          <button
+            type="button"
+            className="press flex w-full items-center gap-3 py-2 text-left"
+            onClick={() => {
+              haptic.light();
+              setLogoutOpen(true);
+            }}
+          >
+            <LogOut className="size-5 text-muted-foreground" aria-hidden />
+            <span className="flex-1 text-sm font-medium">Log out</span>
+          </button>
         </SoftCard>
 
         <Button
@@ -507,15 +518,6 @@ function SettingsScreen() {
         >
           <Trash2 className="size-4" aria-hidden />
           Delete account
-        </Button>
-
-        <Button
-          variant="ghost"
-          className="press h-12 w-full rounded-2xl"
-          onClick={() => setLogoutOpen(true)}
-        >
-          <LogOut className="size-4" aria-hidden />
-          Logout
         </Button>
       </main>
 
