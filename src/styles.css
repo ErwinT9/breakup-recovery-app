@@ -295,3 +295,33 @@
 @utility animate-ring-glow {
   animation: ring-glow 2s var(--ease-native) infinite;
 }
+
+/* Firefly jar */
+@keyframes ff-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.ff-breathe {
+  animation: ff-breathe 6s ease-in-out infinite;
+}
+
+@keyframes ff-ripple {
+  0% {
+    r: 6;
+    opacity: 0.8;
+  }
+  100% {
+    r: 62;
+    opacity: 0;
+  }
+}
+
+.ff-ripple {
+  animation: ff-ripple 900ms ease-out forwards;
+}
