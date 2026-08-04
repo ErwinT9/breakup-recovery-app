@@ -1,14 +1,17 @@
-import { analytics } from "@/lib/analytics";
 import { isNative, safeNative } from "@/lib/native/platform";
+
+import {
+  DEFAULT_NOTIFICATION_PREFS,
+  loadNotificationPrefs,
+  type NotificationPrefs,
+} from "./categories";
 
 /**
  * Notification service.
  *
- * Local notifications drive the daily reminders and milestone celebrations and
- * work fully offline. Firebase push notifications are registered on native
- * builds only; the returned token is stored on the user's profile.
- * All plugins are imported lazily so server rendering and the web preview never
- * touch native code.
+ * Local notifications drive the daily reminders, streak nudges and milestone
+ * celebrations — they work fully offline and never touch Supabase or Firebase.
+ * Remote push lives in ./push.ts and is native-only.
  */
 
 const CHANNEL_ID = "no-contact-reminders";
@@ -30,6 +33,8 @@ export async function requestNotificationPermission(): Promise<boolean> {
   }
   const granted = await safeNative(async () => {
     const LocalNotifications = await localPlugin();
+    const current = await LocalNotifications.checkPermissions();
+    if (current.display === "granted") return true;
     const status = await LocalNotifications.requestPermissions();
     return status.display === "granted";
   }, false);
@@ -60,10 +65,16 @@ export type ReminderPrefs = {
   enabled: boolean;
   morning: boolean;
   evening: boolean;
+  categories?: Partial<NotificationPrefs>;
 };
 
 /** Re-schedules every recurring reminder from scratch. Safe to call often. */
 export async function syncReminders(prefs: ReminderPrefs): Promise<void> {
+  const categories: NotificationPrefs = {
+    ...DEFAULT_NOTIFICATION_PREFS,
+    ...(prefs.categories ?? (await loadNotificationPrefs())),
+  };
+
   await safeNative(async () => {
     const LocalNotifications = await localPlugin();
     const pending = await LocalNotifications.getPending();
@@ -74,7 +85,7 @@ export async function syncReminders(prefs: ReminderPrefs): Promise<void> {
 
     await ensureChannel();
     const notifications = [];
-    if (prefs.morning) {
+    if (prefs.morning && categories.morning) {
       notifications.push({
         id: 1001,
         channelId: CHANNEL_ID,
@@ -83,7 +94,7 @@ export async function syncReminders(prefs: ReminderPrefs): Promise<void> {
         schedule: { at: atHour(9), repeats: true, every: "day" as const },
       });
     }
-    if (prefs.evening) {
+    if (prefs.evening && categories.evening) {
       notifications.push({
         id: 1002,
         channelId: CHANNEL_ID,
@@ -92,19 +103,41 @@ export async function syncReminders(prefs: ReminderPrefs): Promise<void> {
         schedule: { at: atHour(20), repeats: true, every: "day" as const },
       });
     }
-    notifications.push({
-      id: 1003,
-      channelId: CHANNEL_ID,
-      title: "Still here?",
-      body: "We haven't seen you today — your streak is still running.",
-      schedule: { at: atHour(13), repeats: true, every: "day" as const },
-    });
+    if (categories.inactivity) {
+      notifications.push({
+        id: 1003,
+        channelId: CHANNEL_ID,
+        title: "Still here?",
+        body: "We haven't seen you today — your streak is still running.",
+        schedule: { at: atHour(13), repeats: true, every: "day" as const },
+      });
+    }
+    if (categories.daily_motivation) {
+      notifications.push({
+        id: 1004,
+        channelId: CHANNEL_ID,
+        title: "One line for today",
+        body: "Healing isn't linear. Staying no-contact is still progress.",
+        schedule: { at: atHour(11), repeats: true, every: "day" as const },
+      });
+    }
+    if (categories.streak) {
+      notifications.push({
+        id: 1005,
+        channelId: CHANNEL_ID,
+        title: "Your streak is alive",
+        body: "Open the app and see how far you've come.",
+        schedule: { at: atHour(18), repeats: true, every: "day" as const },
+      });
+    }
 
     if (notifications.length > 0) await LocalNotifications.schedule({ notifications });
   });
 }
 
 export async function celebrateMilestone(label: string): Promise<void> {
+  const categories = await loadNotificationPrefs();
+  if (!categories.milestone) return;
   await safeNative(async () => {
     const LocalNotifications = await localPlugin();
     await ensureChannel();
@@ -123,6 +156,8 @@ export async function celebrateMilestone(label: string): Promise<void> {
 }
 
 export async function sosEncouragement(): Promise<void> {
+  const categories = await loadNotificationPrefs();
+  if (!categories.sos) return;
   await safeNative(async () => {
     const LocalNotifications = await localPlugin();
     await ensureChannel();
@@ -140,27 +175,11 @@ export async function sosEncouragement(): Promise<void> {
   });
 }
 
-/** Registers for Firebase push and resolves with the device token. */
-export async function registerPush(): Promise<string | null> {
-  if (!isNative()) return null;
-  const token = await safeNative<string | null>(async () => {
-    const { PushNotifications } = await import("@capacitor/push-notifications");
-    const permission = await PushNotifications.requestPermissions();
-    if (permission.receive !== "granted") return null;
-
-    return new Promise<string | null>((resolve) => {
-      const timeout = setTimeout(() => resolve(null), 8000);
-      void PushNotifications.addListener("registration", (value) => {
-        clearTimeout(timeout);
-        resolve(value.value);
-      });
-      void PushNotifications.addListener("registrationError", (error) => {
-        clearTimeout(timeout);
-        analytics.error(error, { stage: "push_registration" });
-        resolve(null);
-      });
-      void PushNotifications.register();
-    });
-  }, null);
-  return token ?? null;
-}
+export {
+  DEFAULT_NOTIFICATION_PREFS,
+  NOTIFICATION_CATEGORIES,
+  loadNotificationPrefs,
+  saveNotificationPrefs,
+} from "./categories";
+export type { NotificationCategory, NotificationPrefs } from "./categories";
+export { deactivatePushToken, registerPush, syncPushRegistration } from "./push";
