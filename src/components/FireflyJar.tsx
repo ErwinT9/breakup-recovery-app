@@ -105,6 +105,7 @@ export function FireflyJar({
 
       for (let i = 0; i < list.length; i++) {
         const f = list[i];
+        if (!f) continue;
         f.phase += dt * f.speed;
 
         if (f.state === "out") {
@@ -124,7 +125,7 @@ export function FireflyJar({
             for (let j = 0; j < list.length; j++) {
               if (j === i) continue;
               const o = list[j];
-              if (o.state !== "in") continue;
+              if (!o || o.state !== "in") continue;
               const dx = f.x - o.x;
               const dy = f.y - o.y;
               const d2 = dx * dx + dy * dy;
