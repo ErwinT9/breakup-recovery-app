@@ -90,24 +90,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Track your no-contact streak in real time, log red flags and wins, unlock badges and get through urges.",
+          "Track your no-contact streak in real time, log red flags and wins, unlock badges and get through urges with an offline emergency toolkit.",
       },
       { name: "theme-color", content: "#FFFFFF" },
       { property: "og:title", content: "No Contact Tracker: Breakup Reset" },
       {
         property: "og:description",
-        content: "Every day without contact is a step toward healing.",
+        content: "Track your no-contact streak in real time, log red flags and wins, unlock badges and get through urges with an offline emergency toolkit.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "No Contact Tracker: Breakup Reset" },
+      { name: "twitter:description", content: "Track your no-contact streak in real time, log red flags and wins, unlock badges and get through urges with an offline emergency toolkit." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/09c55532-15bf-4dfc-ae3c-926e93cedb76/id-preview-a4956b79--1f48a9cf-2fb9-4a24-8daa-3aa382205a78.lovable.app-1785828429999.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/09c55532-15bf-4dfc-ae3c-926e93cedb76/id-preview-a4956b79--1f48a9cf-2fb9-4a24-8daa-3aa382205a78.lovable.app-1785828429999.png" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
