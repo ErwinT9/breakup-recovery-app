@@ -1,14 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
-import { Flag as FlagIcon, Mail, Sparkles, Trophy, Wind } from "lucide-react";
+import { CircleDot, Flag as FlagIcon, Mail, Sparkles, Trophy, Wind } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 import { SoftCard } from "@/components/SoftCard";
+import { PopIt } from "@/components/PopIt";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { flagRepo, letterRepo, winRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
 import { analytics } from "@/lib/analytics";
-import { AFFIRMATIONS, GROUNDING_STEPS, QUOTES } from "@/lib/content";
+import { AFFIRMATIONS, GROUNDING_STEPS } from "@/lib/content";
+import { getSupportQuoteOfTheDay } from "@/lib/dailyQuote";
 import { haptic } from "@/lib/native/haptics";
 import { sosEncouragement } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
@@ -21,7 +23,7 @@ const MENU: { key: Tool; label: string; hint: string; icon: typeof Wind; tint: s
   { key: "flags", label: "Read my flags", hint: "Why you left", icon: FlagIcon, tint: "bg-coral" },
   { key: "wins", label: "Read my wins", hint: "How far you've come", icon: Trophy, tint: "bg-mint" },
   { key: "letters", label: "My letters", hint: "Say it here instead", icon: Mail, tint: "bg-lavender" },
-  { key: "urge", label: "Urge timer", hint: "Ride it out", icon: Wind, tint: "bg-mint" },
+  { key: "urge", label: "Fight the Urge", hint: "Ride it out", icon: CircleDot, tint: "bg-mint" },
 ];
 
 function useCountdown(seconds: number, active: boolean) {
@@ -76,11 +78,14 @@ export function SosToolkit({
   });
 
   const breatheLeft = useCountdown(60, open && tool === "breathe");
-  const urgeLeft = useCountdown(300, open && tool === "urge");
   const affirmation = useMemo(
     () => AFFIRMATIONS[Math.floor(Math.random() * AFFIRMATIONS.length)],
     [tool],
   );
+  const [quote, setQuote] = useState<string | null>(null);
+  useEffect(() => {
+    if (open) setQuote(getSupportQuoteOfTheDay());
+  }, [open]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -91,7 +96,7 @@ export function SosToolkit({
         <SheetHeader className="px-1 text-left">
           <SheetTitle className="text-2xl">Emergency toolkit</SheetTitle>
           <p className="text-sm text-muted-foreground">
-            This urge peaks in about 20 minutes. Let's get you through it.
+            Most urges pass if you give them a little time. Let&apos;s get through this together.
           </p>
         </SheetHeader>
 
@@ -225,22 +230,17 @@ export function SosToolkit({
           ) : null}
 
           {tool === "urge" ? (
-            <SoftCard className="py-10 text-center">
-              <p className="text-5xl font-semibold tabular-nums">
-                {Math.floor(urgeLeft / 60)}:{String(urgeLeft % 60).padStart(2, "0")}
+            <SoftCard className="py-4">
+              <PopIt onDone={() => onOpenChange(false)} />
+              <p className="mt-4 rounded-2xl bg-lavender p-4 text-center text-sm text-on-tint">
+                {affirmation}
               </p>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Sit with it. Urges are waves — this one is already cresting.
-              </p>
-              <p className="mt-6 rounded-2xl bg-lavender p-4 text-sm text-on-tint">{affirmation}</p>
             </SoftCard>
           ) : null}
 
-          {tool === "menu" ? (
+          {tool === "menu" && quote ? (
             <SoftCard className="bg-sky">
-              <p className="text-sm italic text-on-tint">
-                “{QUOTES[new Date().getDate() % QUOTES.length]}”
-              </p>
+              <p className="animate-fade-in text-sm italic text-on-tint">“{quote}”</p>
             </SoftCard>
           ) : null}
         </div>
