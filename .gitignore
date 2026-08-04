@@ -30,3 +30,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Android signing material / Firebase config (never commit)
+*.jks
+*.keystore
+android/keystore.properties
+android/app/google-services.json

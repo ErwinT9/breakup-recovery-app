@@ -1,175 +1,120 @@
-# Android build guide (documentation only)
+# Android (Capacitor) — build & release guide
 
-> **This file is documentation.** It is *not* the Android project, and no
-> Firebase file belongs inside it.
->
-> | Thing | What it is | Where it lives |
-> | --- | --- | --- |
-> | `ANDROID.md` | This guide | repo root (committed) |
-> | `android/` | The **generated** native Android Studio project | created locally by `bunx cap add android` — not in this repo |
-> | `google-services.json` | Firebase Android config you download from Firebase | **`android/app/google-services.json`**, after `android/` exists |
->
-> The `android/` directory does **not** exist in this repository. Capacitor
-> generates it on your machine. Everything else (web app, plugins, config,
-> notification service, Supabase migrations, Edge Function) is already here.
+App ID: `app.lovable.nocontacttracker` · App name: **No Contact Tracker**
+
+The native Android project lives in `android/` and is committed to the repo.
+
+---
 
 ## 1. Prerequisites
 
-- Node 20+ and [Bun](https://bun.sh) (this project uses Bun; keep it consistent)
-- Android Studio (Ladybug or newer) with Android SDK 35 + JDK 17
-- A Firebase project (see section 4)
+- Node/Bun (this repo uses Bun) and `bun install` completed
+- JDK 21
+- Android Studio (Ladybug or newer) with Android SDK 36 + build tools
+- `ANDROID_HOME` set (Android Studio does this for you)
 
-## 2. Generate the native Android project
+## 2. First-time setup after cloning
+
+Build artifacts and generated plugin glue are intentionally not committed, so run:
 
 ```bash
-git clone <your repo> && cd <repo>
 bun install
-bun run build            # produces dist/client (Capacitor webDir)
-bunx cap add android     # creates ./android — do this once
-bunx cap sync android    # copies web assets + plugins into ./android
+bun run build:mobile   # produces the static SPA in dist/client
+bun run sync:android   # copies web assets + regenerates plugin projects
 ```
 
-`capacitor.config.ts` is already set:
+`sync:android` recreates `android/capacitor-cordova-android-plugins/` and
+`android/app/src/main/assets/public/`, which Gradle needs. Run it after **every**
+web change before building the APK.
 
-- `appId: "app.lovable.nocontacttracker"` (this is the Android application ID)
-- `appName: "No Contact Tracker"`
-- `webDir: "dist/client"`
-- white splash background, `ic_stat_leaf` notification icon, accent `#6BCB77`
-
-Re-run `bun run build && bunx cap sync android` after **every** web change.
-
-## 3. Installed Capacitor plugins
-
-`@capacitor/core`, `@capacitor/cli`, `@capacitor/android`,
-`@capacitor/push-notifications`, `@capacitor/local-notifications`,
-`@capacitor/network`, `@capacitor/preferences`, `@capacitor/app`,
-`@capacitor/camera`, `@capacitor/filesystem`, plus `haptics`, `share`,
-`splash-screen`, `status-bar`, `device` — all on Capacitor 8.
-
-## 4. Firebase Cloud Messaging setup (manual, by you)
-
-1. Create a Firebase project at <https://console.firebase.google.com>.
-2. **Add app → Android** and enter the package name **exactly**:
-
-   ```
-   app.lovable.nocontacttracker
-   ```
-
-   It must match `appId` in `capacitor.config.ts` or FCM will never deliver.
-3. Download `google-services.json` and place it at:
-
-   ```
-   android/app/google-services.json
-   ```
-
-   (only possible after `bunx cap add android`). Do not commit it if your repo
-   is public; never place service-account keys anywhere in `src/` or `public/`.
-4. Wire up the Google Services Gradle plugin:
-
-   `android/build.gradle` → inside `buildscript { dependencies { … } }`:
-
-   ```gradle
-   classpath 'com.google.gms:google-services:4.4.2'
-   ```
-
-   `android/app/build.gradle` → at the **bottom** of the file:
-
-   ```gradle
-   apply plugin: 'com.google.gms.google-services'
-   ```
-
-5. `bunx cap sync android`, then rebuild in Android Studio.
-
-### Server credentials (for sending pushes)
-
-In Firebase → Project settings → Service accounts → **Generate new private
-key**. Store that JSON as a Supabase Edge Function secret named
-`FIREBASE_SERVICE_ACCOUNT` (Supabase dashboard → Edge Functions → Secrets).
-It must never appear in the app bundle or in Git.
-
-## 5. Notification permissions
-
-Android 13+ requires the runtime `POST_NOTIFICATIONS` permission. The app asks
-for it **in context** — at the end of the onboarding questionnaire and from
-Settings → Notifications — never on cold start. Denial is handled gracefully:
-the app keeps working, reminders stay off, and the user can enable them later.
-
-The `@capacitor/push-notifications` plugin adds the required manifest entries
-during `cap sync`; no manual `AndroidManifest.xml` edit is needed.
-
-## 6. Local vs remote notifications
-
-- **Local** (`src/lib/notifications/index.ts`): daily motivation, morning,
-  evening, streak, inactivity, milestone and SOS follow-ups. Scheduled on the
-  device, work with **no internet**, no Firebase required.
-- **Remote** (`src/lib/notifications/push.ts` + Supabase Edge Function
-  `send-push-notification`): FCM tokens are stored in `public.push_tokens`,
-  scoped per user by RLS, deactivated on logout, and pushes are only ever sent
-  server-side.
-
-## 7. Run and debug
+Open the project:
 
 ```bash
-bunx cap open android    # opens Android Studio
-bunx cap run android     # build + install on a connected device
+bun run open:android
 ```
 
-Test push on a **physical device** (emulators need Google Play services).
+## 3. Firebase Cloud Messaging
 
-## 8. Versioning for releases
+1. Create a Firebase project and add an Android app with package
+   `app.lovable.nocontacttracker`.
+2. Download `google-services.json` and place it at `android/app/google-services.json`.
+   (It is gitignored — each developer/CI supplies their own.)
+   The Google Services plugin is applied automatically when the file exists.
+3. In Firebase → Project settings → Service accounts, generate a private key and
+   store its JSON in the Supabase secret used by the `send-push-notification`
+   edge function.
 
-Edit `android/app/build.gradle`:
+Notification appearance is already wired:
+- small icon: `res/drawable/ic_stat_leaf.xml` (white silhouette)
+- accent colour: `res/values/notification_colors.xml` (`#6BCB77`)
+- default channel: `no-contact-reminders` (matches the app's local notifications)
 
-```gradle
-versionCode 2          // must increase on every Play upload
-versionName "1.0.1"
+Debug builds keep the same application ID on purpose, so FCM works in debug too.
+
+## 4. Debug build / run on device
+
+```bash
+bun run build:mobile && bun run sync:android
+cd android && ./gradlew assembleDebug
+# or press Run in Android Studio
 ```
 
-| Change | Version |
+APK: `android/app/build/outputs/apk/debug/app-debug.apk`
+
+## 5. Release signing
+
+Create an upload keystore once:
+
+```bash
+keytool -genkey -v -keystore upload-keystore.jks -alias upload \
+  -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Copy `android/keystore.properties.example` to `android/keystore.properties` and
+fill in the paths/passwords. Both the keystore and that file are gitignored.
+
+If `keystore.properties` is absent the release build falls back to debug signing,
+so the project always compiles — but never ship that artifact.
+
+## 6. Release build
+
+```bash
+bun run build:mobile && bun run sync:android
+cd android
+./gradlew clean bundleRelease   # Play Store AAB
+./gradlew assembleRelease       # sideloadable APK
+```
+
+Outputs:
+- `android/app/build/outputs/bundle/release/app-release.aab`
+- `android/app/build/outputs/apk/release/app-release.apk`
+
+Release builds use R8 (`minifyEnabled` + `shrinkResources`) with keep rules for
+Capacitor plugins, Firebase and RevenueCat in `android/app/proguard-rules.pro`.
+
+## 7. Versioning
+
+Bump `versionCode` (integer, must increase every Play upload) and `versionName`
+in `android/app/build.gradle`.
+
+## 8. Permissions declared
+
+INTERNET, ACCESS_NETWORK_STATE, POST_NOTIFICATIONS, VIBRATE,
+RECEIVE_BOOT_COMPLETED, SCHEDULE_EXACT_ALARM, USE_EXACT_ALARM.
+Camera/photo permissions are merged in by `@capacitor/camera`; the camera
+hardware feature is marked optional.
+
+## 9. Installed Capacitor plugins
+
+app, camera, device, filesystem, haptics, local-notifications, network,
+preferences, push-notifications, share, splash-screen, status-bar,
+and `@revenuecat/purchases-capacitor`.
+
+## 10. Troubleshooting
+
+| Symptom | Fix |
 | --- | --- |
-| Bug fix | `1.0.0 → 1.0.1` |
-| New feature | `1.0.0 → 1.1.0` |
-| Major/breaking | `1.x.x → 2.0.0` |
-
-Every Play release that contains **app code** needs a new signed AAB with a
-higher `versionCode`. Backend-only changes (Supabase schema, Edge Function,
-content) ship without a new AAB.
-
-## 9. Release checklist (AAB)
-
-1. `bun run build && bunx cap sync android`
-2. Bump `versionCode` / `versionName`.
-3. Android Studio → **Build → Generate Signed Bundle / APK → Android App Bundle**.
-4. Create/reuse an upload keystore; keep it and its passwords safe.
-5. Upload the `.aab` to Play Console → Production (or Internal testing first).
-6. Play Console: Privacy Policy URL (the app ships `/privacy` and `/terms`),
-   Data Safety form (email, streak dates, journal text stored in Supabase,
-   encrypted in transit), and declare the app is not medical advice.
-
-## 10. Icons and splash
-
-Replace the icons in `android/app/src/main/res/mipmap-*` (or run
-`bunx @capacitor/assets generate --android`) with your 1024×1024 icon. Add a
-white-on-transparent notification icon named `ic_stat_leaf` in
-`res/drawable-*`; Android tints it with `#6BCB77`.
-
-## 11. Testing checklist
-
-- [ ] Fresh install, first launch, splash → questionnaire
-- [ ] Notification permission **accepted**
-- [ ] Notification permission **denied** (app still fully usable)
-- [ ] Google login / Email login / Logout / Login again
-- [ ] App restart keeps the session and streak
-- [ ] Offline launch: Home, timer, Flags, Wins, Badges, Letters, SOS, Settings
-- [ ] Online → offline (banner appears) and offline → online (queue syncs)
-- [ ] FCM token appears in `push_tokens`; re-login updates instead of duplicating
-- [ ] Logout marks the token `is_active = false`
-- [ ] Multiple devices for the same account each get a row
-- [ ] Local notification fires with airplane mode on
-- [ ] Remote notification via the `send-push-notification` Edge Function
-- [ ] Invalid/expired token is auto-deactivated by the Edge Function
-- [ ] Notification categories toggled off in Settings stop scheduling
-- [ ] System notification settings disabled → no crash
-- [ ] Supabase unreachable → app still opens, queue retries
-- [ ] Deleted account cleans local cache and signs out
-- [ ] Signed AAB builds and installs
+| `project ':capacitor-cordova-android-plugins' not found` | run `bun run sync:android` |
+| Blank white screen | web assets missing — rerun `build:mobile` then `sync:android` |
+| Push not received | `google-services.json` missing or package mismatch |
+| Gradle JVM errors | set Gradle JDK to 21 in Android Studio settings |

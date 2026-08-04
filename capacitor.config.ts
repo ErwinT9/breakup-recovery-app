@@ -6,6 +6,11 @@ const config: CapacitorConfig = {
   webDir: "dist/client",
   android: {
     backgroundColor: "#FFFFFF",
+    // Stable https://localhost origin so Supabase auth storage survives restarts.
+    androidScheme: "https",
+    allowMixedContent: false,
+    captureInput: true,
+    webContentsDebuggingEnabled: false,
   },
   plugins: {
     SplashScreen: {
