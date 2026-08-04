@@ -144,11 +144,15 @@ export function MoodCheckIn({
   onOpenChange,
   onComplete,
   saving,
+  viewOnly = false,
+  summary,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete: (result: MoodCheckInResult) => Promise<void> | void;
   saving?: boolean;
+  viewOnly?: boolean;
+  summary?: React.ReactNode;
 }) {
   const [step, setStep] = useState(0);
   const [mood, setMood] = useState<string | null>(null);
@@ -158,12 +162,12 @@ export function MoodCheckIn({
 
   useEffect(() => {
     if (!open) return;
-    setStep(0);
+    setStep(viewOnly ? 3 : 0);
     setMood(null);
     setAction(null);
     setCustom("");
     setHeld(false);
-  }, [open]);
+  }, [open, viewOnly]);
 
   const canFinish = Boolean(action) || custom.trim().length > 0;
 
@@ -280,12 +284,15 @@ export function MoodCheckIn({
               <Sparkles className="size-7 text-on-tint" aria-hidden />
             </span>
             <div className="space-y-1.5">
-              <DialogTitle className="text-xl">We are Proud of You!</DialogTitle>
+              <DialogTitle className="text-xl">
+                {viewOnly ? "Today's check-in" : "We are Proud of You!"}
+              </DialogTitle>
               <DialogDescription>
                 You checked in with yourself and chose how you want to move forward. Every small
                 step strengthens your healing.
               </DialogDescription>
             </div>
+            {viewOnly && summary ? <div className="text-sm">{summary}</div> : null}
             <Button className="press h-12 w-full rounded-2xl" onClick={() => onOpenChange(false)}>
               Return Home
             </Button>
