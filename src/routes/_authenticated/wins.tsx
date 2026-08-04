@@ -59,8 +59,13 @@ function WinsScreen() {
   });
 
   const add = useMutation({
-    mutationFn: async (value: string) =>
-      winRepo.save(userId, { title: value.trim(), note: note.trim() || null }),
+    mutationFn: async (input: string | { title: string; note: string | null }) => {
+      const payload = typeof input === "string" ? { title: input, note: null } : input;
+      return winRepo.save(userId, {
+        title: payload.title.trim(),
+        note: payload.note?.trim() || null,
+      });
+    },
     onSuccess: (rows) => {
       activity.featureUsed("wins");
       queryClient.setQueryData(["wins", userId], rows);
@@ -133,7 +138,7 @@ function WinsScreen() {
               <Button
                 className="press h-12 w-full rounded-2xl"
                 disabled={!title.trim() || add.isPending}
-                onClick={() => add.mutate(title)}
+                onClick={() => add.mutate({ title, note })}
               >
                 Celebrate it
               </Button>
