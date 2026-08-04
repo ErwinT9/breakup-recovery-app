@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, ArrowRight, Flag, HeartHandshake, Mail, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowRight, HeartHandshake, Mail, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -258,10 +258,7 @@ function HomeScreen() {
         <div className="grid grid-cols-3 gap-3">
           <Link to="/flags" className="press">
             <SoftCard className="bg-coral h-full text-center">
-              <p className="flex items-center justify-center gap-1.5 text-2xl font-semibold text-on-tint">
-                <Flag className="size-5 fill-red-600 text-red-600" aria-hidden />
-                {flags.data?.length ?? 0}
-              </p>
+              <p className="text-2xl font-semibold text-on-tint">{flags.data?.length ?? 0}</p>
               <p className="text-xs text-on-tint/70">Flags</p>
             </SoftCard>
           </Link>
@@ -306,9 +303,7 @@ function HomeScreen() {
           <div className="flex items-start gap-3">
             <Sparkles className="mt-0.5 size-5 text-on-tint" aria-hidden />
             <p className="text-sm text-on-tint">
-              {profile.data?.display_name
-                ? `${profile.data.display_name}, the urge to reach out fades faster every single day.`
-                : "The urge to reach out fades faster every single day."}
+              The urge to reach out fades faster every single day.
             </p>
           </div>
         </SoftCard>

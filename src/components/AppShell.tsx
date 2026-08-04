@@ -77,6 +77,7 @@ export function AppShell({
       >
         {TABS.map(({ to, label, icon: Icon }) => {
           const active = pathname === to;
+          const isFlags = to === "/flags";
           return (
             <Link
               key={to}
@@ -94,7 +95,13 @@ export function AppShell({
                   active && "bg-mint",
                 )}
               >
-                <Icon className="size-5" aria-hidden />
+                <Icon
+                  className={cn(
+                    "size-5",
+                    isFlags && (active ? "fill-red-600 text-red-600" : "fill-red-400/60 text-red-400/70"),
+                  )}
+                  aria-hidden
+                />
               </span>
               {label}
             </Link>
