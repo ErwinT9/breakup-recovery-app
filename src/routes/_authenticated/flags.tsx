@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Trash2 } from "lucide-react";
+import { Check, Circle, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -24,6 +24,23 @@ import { analytics, humanizeError } from "@/lib/analytics";
 import { FLAG_CATEGORIES, FLAG_SUGGESTIONS } from "@/lib/content";
 import { haptic } from "@/lib/native/haptics";
 import { cn } from "@/lib/utils";
+
+/** Sensible default category for each predefined flag. */
+const SUGGESTION_CATEGORY: Record<string, string> = {
+  "Lied to me": "dishonesty",
+  Cheated: "betrayal",
+  "Ghosted me": "neglect",
+  "Manipulated me": "control",
+  "Gaslighted me": "control",
+  "Ignored my boundaries": "boundaries",
+  "Broke promises": "dishonesty",
+};
+
+function formatFlagDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
 
 export const Route = createFileRoute("/_authenticated/flags")({
   head: () => ({
@@ -60,7 +77,14 @@ function FlagsScreen() {
   });
 
   const add = useMutation({
-    mutationFn: async () => flagRepo.save(userId, { title: title.trim(), note: note.trim() || null, category }),
+    mutationFn: async (input?: { title: string; note: string | null; category: string }) => {
+      const payload = input ?? { title, note, category };
+      return flagRepo.save(userId, {
+        title: payload.title.trim(),
+        note: payload.note?.trim() || null,
+        category: payload.category,
+      });
+    },
     onSuccess: (rows) => {
       activity.featureUsed("flags");
       queryClient.setQueryData(["flags", userId], rows);
@@ -78,6 +102,9 @@ function FlagsScreen() {
     onError: (error) => toast.error(humanizeError(error)),
   });
 
+  const allFlags = flags.data ?? [];
+  const loggedTitles = new Set(allFlags.map((flag) => flag.title.trim().toLowerCase()));
+
   return (
     <AppShell
       title="Red flags"
@@ -91,7 +118,7 @@ function FlagsScreen() {
           </DialogTrigger>
           <DialogContent className="rounded-3xl">
             <DialogHeader>
-              <DialogTitle>Add a flag</DialogTitle>
+              <DialogTitle>Custom red flag</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -135,7 +162,7 @@ function FlagsScreen() {
               <Button
                 className="press h-12 w-full rounded-2xl"
                 disabled={!title.trim() || add.isPending}
-                onClick={() => add.mutate()}
+                onClick={() => add.mutate(undefined)}
               >
                 Save flag
               </Button>
@@ -144,58 +171,92 @@ function FlagsScreen() {
         </Dialog>
       }
     >
-      <div className="space-y-3">
-        {(flags.data ?? []).length === 0 ? (
-          <>
+      <div className="space-y-6">
+        <section className="space-y-3">
+          <div>
+            <p className="text-sm font-semibold">Common Red Flags</p>
+            <p className="text-xs text-muted-foreground">Tap to add</p>
+          </div>
+          {FLAG_SUGGESTIONS.map((suggestion) => {
+            const done = loggedTitles.has(suggestion.toLowerCase());
+            return (
+              <button
+                key={suggestion}
+                type="button"
+                disabled={done || add.isPending}
+                aria-label={done ? `${suggestion} — already added` : `Add flag: ${suggestion}`}
+                className="press w-full text-left disabled:cursor-default"
+                onClick={() =>
+                  add.mutate({
+                    title: suggestion,
+                    note: null,
+                    category: SUGGESTION_CATEGORY[suggestion] ?? "other",
+                  })
+                }
+              >
+                <SoftCard
+                  className={cn(
+                    "flex items-center gap-3 transition-opacity",
+                    done && "bg-coral opacity-70",
+                  )}
+                >
+                  {done ? (
+                    <Check className="size-4 shrink-0 text-on-tint" aria-hidden />
+                  ) : (
+                    <Circle className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  )}
+                  <p className={cn("text-sm", done && "text-on-tint")}>{suggestion}</p>
+                </SoftCard>
+              </button>
+            );
+          })}
+        </section>
+
+        <section className="space-y-3">
+          <div>
+            <p className="text-sm font-semibold">My Red Flags</p>
+            <p className="text-xs text-muted-foreground">
+              {allFlags.length === 0
+                ? "Nothing yet — tap one above or add your own."
+                : `${allFlags.length} saved`}
+            </p>
+          </div>
+          {allFlags.length === 0 ? (
             <SoftCard className="bg-coral">
               <p className="font-medium text-on-tint">Start with one honest memory</p>
               <p className="mt-1 text-sm text-on-tint/75">
                 On day 12 at 1am, this list is what stops the text.
               </p>
             </SoftCard>
-            <p className="pt-2 text-sm font-medium text-muted-foreground">Common ones</p>
-            {FLAG_SUGGESTIONS.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                className="press w-full text-left"
-                onClick={() => {
-                  setTitle(suggestion);
-                  setOpen(true);
-                }}
-              >
-                <SoftCard>
-                  <p className="text-sm">{suggestion}</p>
-                </SoftCard>
-              </button>
-            ))}
-          </>
-        ) : (
-          (flags.data ?? []).map((flag) => (
-            <SoftCard key={flag.id} className="bg-coral flex items-start gap-3">
-              <div className="flex-1">
-                <p className="font-medium text-on-tint">{flag.title}</p>
-                {flag.note ? (
-                  <p className="mt-1 text-sm text-on-tint/75">{flag.note}</p>
-                ) : null}
-                <p className="mt-2 text-xs text-on-tint/60 uppercase">
-                  {FLAG_CATEGORIES.find((item) => item.key === flag.category)?.label ?? "Other"}
-                </p>
-              </div>
-              <button
-                type="button"
-                aria-label={`Delete flag ${flag.title}`}
-                className="press text-on-tint/60"
-                onClick={() => {
-                  haptic.light();
-                  remove.mutate(flag.id);
-                }}
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </button>
-            </SoftCard>
-          ))
-        )}
+          ) : (
+            allFlags.map((flag) => (
+              <SoftCard key={flag.id} className="bg-coral flex items-start gap-3">
+                <Check className="mt-0.5 size-4 shrink-0 text-on-tint" aria-hidden />
+                <div className="flex-1">
+                  <p className="font-medium text-on-tint">{flag.title}</p>
+                  {flag.note ? <p className="mt-1 text-sm text-on-tint/75">{flag.note}</p> : null}
+                  <p className="mt-2 text-xs text-on-tint/60">
+                    <span className="uppercase">
+                      {FLAG_CATEGORIES.find((item) => item.key === flag.category)?.label ?? "Other"}
+                    </span>
+                    {flag.created_at ? ` · ${formatFlagDate(flag.created_at)}` : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label={`Delete flag ${flag.title}`}
+                  className="press text-on-tint/60"
+                  onClick={() => {
+                    haptic.light();
+                    remove.mutate(flag.id);
+                  }}
+                >
+                  <Trash2 className="size-4" aria-hidden />
+                </button>
+              </SoftCard>
+            ))
+          )}
+        </section>
       </div>
     </AppShell>
   );
