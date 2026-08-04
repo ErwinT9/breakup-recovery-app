@@ -3,15 +3,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 const MAX_FIREFLIES = 30;
 
 /** Jar interior bounds in SVG user units (viewBox 0 0 260 190). */
-const IN = { x0: 56, x1: 204, y0: 78, y1: 162 };
+const IN = { x0: 64, x1: 196, y0: 74, y1: 158 };
 const CX = (IN.x0 + IN.x1) / 2;
 const CY = (IN.y0 + IN.y1) / 2;
 
-/** Compact rounded firefly jar: wide belly, short neck, small cork, flat base. */
+/** Cute round goldfish bowl: flared rim, open top, fat belly, small foot. */
 const JAR_PATH =
-  "M110 46 h40 v13 c0 5 3 8 8 10 c34 12 56 34 56 62 v13 c0 14 -10 24 -26 24 h-116 c-16 0 -26 -10 -26 -24 v-13 c0 -28 22 -50 56 -62 c5 -2 8 -5 8 -10 z";
+  "M88 52 C60 66 44 90 44 116 C44 152 82 176 130 176 C178 176 216 152 216 116 C216 90 200 66 172 52 A42 10 0 0 1 88 52 Z";
 const INNER_PATH =
-  "M114 50 h32 v10 c0 5 3 8 8 10 c31 11 50 31 50 56 v12 c0 11 -8 19 -21 19 h-108 c-13 0 -21 -8 -21 -19 v-12 c0 -25 19 -45 50 -56 c5 -2 8 -5 8 -10 z";
+  "M93 59 C68 72 52 94 52 116 C52 148 87 169 130 169 C173 169 208 148 208 116 C208 94 192 72 167 59 A37 8 0 0 1 93 59 Z";
 
 type Fly = {
   id: number;
@@ -270,27 +270,26 @@ export function FireflyJar({
       {/* accumulated warmth from the fireflies (never from the glass itself) */}
       <ellipse
         cx={CX}
-        cy={CY + 4}
-        rx="98"
-        ry="72"
+        cy={CY}
+        rx="92"
+        ry="70"
         fill={`url(#${uid}-ambient)`}
         opacity={0.1 + progress * 0.45}
       />
 
-      {/* cork */}
-      <path d="M112 24h36v18c0 4-3 6-7 6h-22c-4 0-7-2-7-6V24Z" fill={`url(#${uid}-cork)`} />
-      <rect x="108" y="19" width="44" height="8" rx="4" fill="#e0b688" opacity="0.8" />
-      <path d="M112 33h36" stroke="#8d6538" strokeWidth="1" opacity="0.35" />
+      {/* small glass foot under the bowl */}
+      <path d="M112 170h36l4 10h-44l4-10Z" fill="#dbe6f0" opacity="0.35" />
+      <ellipse cx={CX} cy="181" rx="26" ry="4.5" fill="#c9d8e6" opacity="0.45" />
 
       {/* glass body */}
       <path d={JAR_PATH} fill={`url(#${uid}-glass)`} stroke="#a9b7c4" strokeWidth="2.2" strokeLinejoin="round" />
       {/* inner wall line — reads as glass thickness */}
       <path d={INNER_PATH} fill="none" stroke="#c6d3de" strokeWidth="1.1" opacity="0.75" />
-      {/* neck rings */}
-      <path d="M110 46h40" stroke="#a9b7c4" strokeWidth="1.6" opacity="0.8" />
-      <path d="M104 62h52" stroke="#c1cedb" strokeWidth="1.2" opacity="0.6" />
-      {/* flat base */}
-      <path d="M78 161h104" stroke="#c1cedb" strokeWidth="1.2" opacity="0.6" />
+      {/* flared rim of the bowl */}
+      <ellipse cx={CX} cy="52" rx="42" ry="10" fill="#eaf2f9" fillOpacity="0.28" stroke="#a9b7c4" strokeWidth="2.2" />
+      <ellipse cx={CX} cy="52" rx="36" ry="7.5" fill="none" stroke="#c6d3de" strokeWidth="1.1" opacity="0.8" />
+      {/* water line */}
+      <path d="M60 92c22 9 46 13 70 13s48-4 70-13" stroke="#bcd6e8" strokeWidth="1.4" opacity="0.55" fill="none" />
 
       <g clipPath={`url(#${uid}-clip)`}>
         {slots.map((i) => (
@@ -325,7 +324,7 @@ export function FireflyJar({
 
       {/* soft glass highlights */}
       <path
-        d="M62 118c-2 16 2 28 10 36"
+        d="M67 96c-9 15-10 33-3 47"
         stroke="#ffffff"
         strokeWidth="5"
         strokeLinecap="round"
@@ -333,7 +332,7 @@ export function FireflyJar({
         fill="none"
       />
       <path
-        d="M76 106c-4 12-4 22-1 30"
+        d="M80 90c-8 12-11 24-9 36"
         stroke="#ffffff"
         strokeWidth="2"
         strokeLinecap="round"
@@ -341,7 +340,7 @@ export function FireflyJar({
         fill="none"
       />
       <path
-        d="M192 112c4 14 3 28-3 38"
+        d="M196 104c6 14 5 30-3 42"
         stroke="#ffffff"
         strokeWidth="2.5"
         strokeLinecap="round"
