@@ -248,11 +248,7 @@ export function FireflyJar({
           <stop offset="75%" stopColor="#e8f0f7" stopOpacity="0.10" />
           <stop offset="100%" stopColor="#c9d8e6" stopOpacity="0.20" />
         </linearGradient>
-        <linearGradient id={`${uid}-cork`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#d3a978" />
-          <stop offset="100%" stopColor="#a97e4f" />
-        </linearGradient>
-        <radialGradient id={`${uid}-halo`} cx="50%" cy="50%" r="50%">
+                <radialGradient id={`${uid}-halo`} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#ffedb4" stopOpacity="1" />
           <stop offset="30%" stopColor="#ffdf90" stopOpacity="0.55" />
           <stop offset="60%" stopColor="#ffd873" stopOpacity="0.24" />
