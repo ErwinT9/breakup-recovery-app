@@ -122,3 +122,14 @@ export type JournalEntry = {
   mood: string | null;
   created_at: string;
 };
+
+export type MoodCheckin = {
+  id: string;
+  user_id: string;
+  checkin_on: string;
+  mood: string;
+  action: string | null;
+  custom_intention: string | null;
+  completed_at: string;
+  created_at: string;
+};

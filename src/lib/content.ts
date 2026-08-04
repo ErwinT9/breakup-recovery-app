@@ -115,3 +115,35 @@ export const GROUNDING_STEPS = [
   { count: 2, sense: "things you can smell", hint: "Or two smells you love." },
   { count: 1, sense: "thing you can taste", hint: "Take a sip of water." },
 ];
+
+export const MOODS = [
+  { key: "anxious", emoji: "😰", label: "Anxious" },
+  { key: "sad", emoji: "😢", label: "Sad" },
+  { key: "heavy", emoji: "😔", label: "Heavy" },
+  { key: "numb", emoji: "😶", label: "Numb" },
+  { key: "tired", emoji: "😴", label: "Tired" },
+  { key: "restless", emoji: "😤", label: "Restless" },
+  { key: "peaceful", emoji: "😌", label: "Peaceful" },
+  { key: "okay", emoji: "🙂", label: "Okay" },
+  { key: "hopeful", emoji: "😊", label: "Hopeful" },
+  { key: "strong", emoji: "💪", label: "Strong" },
+] as const;
+
+export const MOOD_ACTIONS = [
+  { key: "walk", emoji: "🚶", label: "Take a walk" },
+  { key: "breathe", emoji: "🌬", label: "Take 3 deep breaths" },
+  { key: "journal", emoji: "📖", label: "Journal" },
+  { key: "music", emoji: "🎵", label: "Listen to music" },
+  { key: "water", emoji: "☕", label: "Drink water" },
+  { key: "offline", emoji: "📵", label: "Stay off social media" },
+  { key: "friend", emoji: "📞", label: "Call a friend" },
+  { key: "meditate", emoji: "🧘", label: "Meditate" },
+] as const;
+
+export function moodByKey(key: string | null | undefined) {
+  return MOODS.find((mood) => mood.key === key) ?? null;
+}
+
+export function actionByKey(key: string | null | undefined) {
+  return MOOD_ACTIONS.find((action) => action.key === key) ?? null;
+}
