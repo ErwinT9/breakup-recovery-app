@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Trash2 } from "lucide-react";
+import { Check, Circle, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { winRepo } from "@/data/repository";
+import { localDayKey, winRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
 import { activity } from "@/lib/badgeActivity";
 import { analytics, humanizeError } from "@/lib/analytics";
@@ -79,6 +79,20 @@ function WinsScreen() {
     onError: (error) => toast.error(humanizeError(error)),
   });
 
+  const allWins = wins.data ?? [];
+  const today = localDayKey();
+  const todaysWins = allWins.filter((win) => win.achieved_on === today);
+  const earlierWins = allWins.filter((win) => win.achieved_on !== today);
+  const loggedTitlesToday = new Set(
+    todaysWins.map((win) => win.title.trim().toLowerCase()),
+  );
+
+  const handleDelete = (id: string, title: string) => {
+    haptic.light();
+    remove.mutate(id);
+    void title;
+  };
+
   return (
     <AppShell
       title="Wins"
@@ -92,7 +106,7 @@ function WinsScreen() {
           </DialogTrigger>
           <DialogContent className="rounded-3xl">
             <DialogHeader>
-              <DialogTitle>Log a win</DialogTitle>
+              <DialogTitle>Custom win</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -128,52 +142,95 @@ function WinsScreen() {
         </Dialog>
       }
     >
-      <div className="space-y-3">
-        {(wins.data ?? []).length === 0 ? (
-          <>
+      <div className="space-y-6">
+        <section className="space-y-3">
+          <div>
+            <p className="text-sm font-semibold">Quick Wins</p>
+            <p className="text-xs text-muted-foreground">Tap to log</p>
+          </div>
+          {WIN_SUGGESTIONS.map((suggestion) => {
+            const done = loggedTitlesToday.has(suggestion.toLowerCase());
+            return (
+              <button
+                key={suggestion}
+                type="button"
+                disabled={done || add.isPending}
+                aria-label={done ? `${suggestion} — already logged today` : `Log win: ${suggestion}`}
+                className="press w-full text-left disabled:cursor-default"
+                onClick={() => add.mutate(suggestion)}
+              >
+                <SoftCard
+                  className={`flex items-center gap-3 transition-opacity ${done ? "bg-mint opacity-70" : ""}`}
+                >
+                  {done ? (
+                    <Check className="size-4 shrink-0 text-on-tint" aria-hidden />
+                  ) : (
+                    <Circle className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                  )}
+                  <p className={`text-sm ${done ? "text-on-tint" : ""}`}>{suggestion}</p>
+                </SoftCard>
+              </button>
+            );
+          })}
+        </section>
+
+        <section className="space-y-3">
+          <div>
+            <p className="text-sm font-semibold">Today&apos;s Wins</p>
+            <p className="text-xs text-muted-foreground">
+              {todaysWins.length === 0
+                ? "Nothing yet — tap a quick win above."
+                : `${todaysWins.length} logged today`}
+            </p>
+          </div>
+          {todaysWins.length === 0 ? (
             <SoftCard className="bg-mint">
               <p className="font-medium text-on-tint">Your first win is already here</p>
               <p className="mt-1 text-sm text-on-tint/75">
                 You opened this app instead of their chat.
               </p>
             </SoftCard>
-            <p className="pt-2 text-sm font-medium text-muted-foreground">Tap to log</p>
-            {WIN_SUGGESTIONS.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                className="press w-full text-left"
-                onClick={() => add.mutate(suggestion)}
-              >
-                <SoftCard>
-                  <p className="text-sm">{suggestion}</p>
-                </SoftCard>
-              </button>
+          ) : (
+            todaysWins.map((win) => <WinRow key={win.id} win={win} onDelete={handleDelete} />)
+          )}
+        </section>
+
+        {earlierWins.length > 0 ? (
+          <section className="space-y-3">
+            <p className="text-sm font-semibold">Earlier Wins</p>
+            {earlierWins.map((win) => (
+              <WinRow key={win.id} win={win} onDelete={handleDelete} />
             ))}
-          </>
-        ) : (
-          (wins.data ?? []).map((win) => (
-            <SoftCard key={win.id} className="bg-mint flex items-start gap-3">
-              <div className="flex-1">
-                <p className="font-medium text-on-tint">{win.title}</p>
-                {win.note ? <p className="mt-1 text-sm text-on-tint/75">{win.note}</p> : null}
-                <p className="mt-2 text-xs text-on-tint/60">{win.achieved_on}</p>
-              </div>
-              <button
-                type="button"
-                aria-label={`Delete win ${win.title}`}
-                className="press text-on-tint/60"
-                onClick={() => {
-                  haptic.light();
-                  remove.mutate(win.id);
-                }}
-              >
-                <Trash2 className="size-4" aria-hidden />
-              </button>
-            </SoftCard>
-          ))
-        )}
+          </section>
+        ) : null}
       </div>
     </AppShell>
+  );
+}
+
+function WinRow({
+  win,
+  onDelete,
+}: {
+  win: { id: string; title: string; note: string | null; achieved_on: string };
+  onDelete: (id: string, title: string) => void;
+}) {
+  return (
+    <SoftCard className="bg-mint flex items-start gap-3">
+      <Check className="mt-0.5 size-4 shrink-0 text-on-tint" aria-hidden />
+      <div className="flex-1">
+        <p className="font-medium text-on-tint">{win.title}</p>
+        {win.note ? <p className="mt-1 text-sm text-on-tint/75">{win.note}</p> : null}
+        <p className="mt-2 text-xs text-on-tint/60">{win.achieved_on}</p>
+      </div>
+      <button
+        type="button"
+        aria-label={`Delete win ${win.title}`}
+        className="press text-on-tint/60"
+        onClick={() => onDelete(win.id, win.title)}
+      >
+        <Trash2 className="size-4" aria-hidden />
+      </button>
+    </SoftCard>
   );
 }
