@@ -80,6 +80,7 @@ export const BADGES: BadgeDef[] = [
   { key: "day-3", label: "Day 3", description: "Past the first spike.", days: 3, tint: "bg-mint" },
   { key: "day-7", label: "Day 7", description: "One full week.", days: 7, tint: "bg-sky" },
   { key: "day-14", label: "Day 14", description: "Two weeks strong.", days: 14, tint: "bg-sky" },
+  { key: "day-21", label: "Day 21", description: "Three weeks of quiet.", days: 21, tint: "bg-sky" },
   { key: "day-30", label: "Day 30", description: "A whole month.", days: 30, tint: "bg-lavender" },
   { key: "day-60", label: "Day 60", description: "Sixty days of you.", days: 60, tint: "bg-lavender" },
   { key: "day-90", label: "Day 90", description: "The classic milestone.", days: 90, tint: "bg-coral" },
@@ -91,6 +92,13 @@ export const BADGES: BadgeDef[] = [
   { key: "resilient", label: "Resilient", description: "Used the SOS toolkit and stayed strong.", tint: "bg-coral" },
 ];
 
+/** Milestone badges are the single source of truth for streak milestones. */
+export type MilestoneBadge = BadgeDef & { days: number };
+
+export const MILESTONE_BADGES: MilestoneBadge[] = BADGES.filter(
+  (badge): badge is MilestoneBadge => typeof badge.days === "number",
+).sort((a, b) => a.days - b.days);
+
 export function earnedBadgeKeys(input: {
   days: number;
   flags: number;
@@ -98,7 +106,7 @@ export function earnedBadgeKeys(input: {
   letters: number;
   sosUsed: boolean;
 }): string[] {
-  const keys = BADGES.filter((badge) => badge.days !== undefined && input.days >= badge.days).map(
+  const keys = MILESTONE_BADGES.filter((badge) => input.days >= badge.days).map(
     (badge) => badge.key,
   );
   if (input.flags >= 1) keys.push("healing-begins");
@@ -106,6 +114,16 @@ export function earnedBadgeKeys(input: {
   if (input.letters >= 1) keys.push("fresh-start");
   if (input.sosUsed) keys.push("resilient");
   return keys;
+}
+
+/** The next milestone badge the user is working toward, if any. */
+export function nextMilestoneBadge(days: number): MilestoneBadge | null {
+  return MILESTONE_BADGES.find((badge) => badge.days > days) ?? null;
+}
+
+/** The most recent milestone badge already unlocked. */
+export function currentMilestoneBadge(days: number): MilestoneBadge | null {
+  return [...MILESTONE_BADGES].reverse().find((badge) => badge.days <= days) ?? null;
 }
 
 export const GROUNDING_STEPS = [
