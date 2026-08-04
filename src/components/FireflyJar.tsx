@@ -258,6 +258,13 @@ export function FireflyJar({
           <stop offset="0%" stopColor="#ffe6a0" stopOpacity="0.5" />
           <stop offset="100%" stopColor="#ffe6a0" stopOpacity="0" />
         </radialGradient>
+        {/* cute brown cork */}
+        <linearGradient id={`${uid}-cork`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#b07a4a" />
+          <stop offset="30%" stopColor="#d8a473" />
+          <stop offset="70%" stopColor="#c68f5c" />
+          <stop offset="100%" stopColor="#a06c40" />
+        </linearGradient>
         <clipPath id={`${uid}-clip`}>
           <path d={INNER_PATH} />
         </clipPath>
@@ -284,6 +291,24 @@ export function FireflyJar({
       {/* flared rim of the bowl */}
       <ellipse cx={CX} cy="52" rx="42" ry="10" fill="#eaf2f9" fillOpacity="0.28" stroke="#a9b7c4" strokeWidth="2.2" />
       <ellipse cx={CX} cy="52" rx="36" ry="7.5" fill="none" stroke="#c6d3de" strokeWidth="1.1" opacity="0.8" />
+
+      {/* cute brown cork — closes the jar */}
+      <g>
+        <path
+          d="M96 34 C96 28 110 24 130 24 C150 24 164 28 164 34 L160 50 C160 56 146 59 130 59 C114 59 100 56 100 50 Z"
+          fill={`url(#${uid}-cork)`}
+          stroke="#8f5f36"
+          strokeWidth="1.6"
+          strokeLinejoin="round"
+        />
+        {/* top face */}
+        <ellipse cx={CX} cy="34" rx="34" ry="9" fill="#e0ae7c" stroke="#8f5f36" strokeWidth="1.6" />
+        {/* soft highlight + speckles for a cork texture */}
+        <ellipse cx="116" cy="33" rx="10" ry="3.6" fill="#f3d1a8" opacity="0.65" />
+        <circle cx="118" cy="45" r="1.5" fill="#9a6739" opacity="0.55" />
+        <circle cx="134" cy="49" r="1.2" fill="#9a6739" opacity="0.45" />
+        <circle cx="146" cy="42" r="1.4" fill="#9a6739" opacity="0.5" />
+      </g>
       {/* water line */}
       <path d="M60 92c22 9 46 13 70 13s48-4 70-13" stroke="#bcd6e8" strokeWidth="1.4" opacity="0.55" fill="none" />
 
