@@ -7,6 +7,7 @@ import { MoreDrawer } from "@/components/MoreDrawer";
 import { SosToolkit } from "@/components/SosToolkit";
 import { activity } from "@/lib/badgeActivity";
 import { haptic } from "@/lib/native/haptics";
+import { wireNotificationTaps } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -34,6 +35,7 @@ export function AppShell({
 
   useEffect(() => {
     activity.appOpened();
+    void wireNotificationTaps();
   }, []);
 
   useEffect(() => {
