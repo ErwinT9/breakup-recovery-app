@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const MAX_FIREFLIES = 18;
+const MAX_FIREFLIES = 30;
 
 /** Jar interior bounds in SVG user units (viewBox 0 0 200 260). */
 const IN = { x0: 52, x1: 148, y0: 76, y1: 212 };
@@ -27,6 +27,8 @@ type Fly = {
   seed: number;
   state: "in" | "out";
   opacity: number;
+  pause: number;
+  nextPause: number;
 };
 
 function usePrefersReducedMotion(): boolean {
@@ -48,14 +50,16 @@ function spawn(id: number): Fly {
     y: IN.y0 + 12 + Math.random() * (IN.y1 - IN.y0 - 24),
     vx: (Math.random() - 0.5) * 6,
     vy: (Math.random() - 0.5) * 6,
-    r: 0.75 + Math.random() * 0.75,
-    bright: 0.6 + Math.random() * 0.4,
+    r: 1.0 + Math.random() * 1.0,
+    bright: 0.72 + Math.random() * 0.28,
     phase: Math.random() * Math.PI * 2,
     flicker: 0.8 + Math.random() * 1.9,
     speed: 0.55 + Math.random() * 0.65,
     seed: Math.random() * 1000,
     state: "in",
     opacity: 0,
+    pause: 0,
+    nextPause: 3 + Math.random() * 7,
   };
 }
 
@@ -72,7 +76,11 @@ export function FireflyJar({
 }) {
   const reduced = usePrefersReducedMotion();
   const progress = Math.min(1, Math.max(0, dailyProgress));
-  const target = Math.max(reduced ? 1 : 0, Math.round(progress * MAX_FIREFLIES));
+  // Slightly front-loaded curve so the jar feels alive early and rich by night.
+  const target = Math.max(
+    reduced ? 2 : 0,
+    Math.round(Math.pow(progress, 0.85) * MAX_FIREFLIES),
+  );
 
   const flies = useRef<Fly[]>([]);
   const nodes = useRef<Array<SVGGElement | null>>([]);
@@ -99,7 +107,7 @@ export function FireflyJar({
       const list = flies.current;
       const active = list.filter((f) => f.state === "in").length;
 
-      if (accum > 0.9) {
+      if (accum > 0.35) {
         accum = 0;
         if (active < targetRef.current && list.length < MAX_FIREFLIES) {
           list.push(spawn(nextId.current++));
@@ -122,8 +130,22 @@ export function FireflyJar({
           f.opacity = Math.min(1, f.opacity + dt * 0.6);
           if (!reduced) {
             const t = now / 1000;
-            f.vx += Math.sin(t * 0.7 * f.speed + f.seed) * dt * 24;
-            f.vy += Math.cos(t * 0.53 * f.speed + f.seed * 1.7) * dt * 24;
+            // occasional brief hover-pause before changing direction
+            f.nextPause -= dt;
+            if (f.nextPause <= 0) {
+              f.pause = 0.5 + Math.random() * 1.1;
+              f.nextPause = 4 + Math.random() * 8;
+            }
+            if (f.pause > 0) {
+              f.pause -= dt;
+              f.vx *= Math.pow(0.06, dt);
+              f.vy *= Math.pow(0.06, dt);
+            } else {
+              f.vx += Math.sin(t * 0.7 * f.speed + f.seed) * dt * 26;
+              f.vy += Math.cos(t * 0.53 * f.speed + f.seed * 1.7) * dt * 26;
+              f.vx += Math.sin(t * 0.19 + f.seed * 0.7) * dt * 12;
+              f.vy += Math.cos(t * 0.23 + f.seed * 1.3) * dt * 12;
+            }
 
             for (let j = 0; j < list.length; j++) {
               if (j === i) continue;
@@ -132,7 +154,7 @@ export function FireflyJar({
               const dx = f.x - o.x;
               const dy = f.y - o.y;
               const d2 = dx * dx + dy * dy;
-              if (d2 < 324 && d2 > 0.001) {
+              if (d2 < 400 && d2 > 0.001) {
                 const d = Math.sqrt(d2);
                 f.vx += (dx / d) * dt * 90;
                 f.vy += (dy / d) * dt * 90;
@@ -213,7 +235,7 @@ export function FireflyJar({
   return (
     <svg
       viewBox="0 0 200 260"
-      className="mx-auto block w-full max-w-[240px] cursor-pointer select-none"
+      className="mx-auto -my-4 block w-full max-w-[330px] cursor-pointer select-none"
       role="img"
       aria-label={`${days} days no contact. Today is ${Math.round(progress * 100)}% complete.`}
       onPointerDown={handleTap as unknown as React.MouseEventHandler<SVGSVGElement>}
@@ -231,8 +253,9 @@ export function FireflyJar({
           <stop offset="100%" stopColor="#a97e4f" />
         </linearGradient>
         <radialGradient id={`${uid}-halo`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#ffe9a8" stopOpacity="0.85" />
-          <stop offset="45%" stopColor="#ffd873" stopOpacity="0.28" />
+          <stop offset="0%" stopColor="#ffedb4" stopOpacity="1" />
+          <stop offset="30%" stopColor="#ffdf90" stopOpacity="0.55" />
+          <stop offset="60%" stopColor="#ffd873" stopOpacity="0.24" />
           <stop offset="100%" stopColor="#ffcf5c" stopOpacity="0" />
         </radialGradient>
         <radialGradient id={`${uid}-ambient`} cx="50%" cy="55%" r="50%">
@@ -278,10 +301,11 @@ export function FireflyJar({
             }}
             style={{ opacity: 0 }}
           >
-            <circle r="11" fill={`url(#${uid}-halo)`} />
-            <ellipse cx="-1.6" cy="0" rx="1.9" ry="1.2" fill="#8a7a55" opacity="0.5" />
-            <circle r="2" cx="1.1" fill="#fff3c4" />
-            <circle r="0.9" cx="1.1" fill="#ffffff" />
+            <circle r="18" fill={`url(#${uid}-halo)`} opacity="0.55" />
+            <circle r="9" fill={`url(#${uid}-halo)`} />
+            <ellipse cx="-1.8" cy="0" rx="2.1" ry="1.3" fill="#8a7a55" opacity="0.45" />
+            <circle r="2.4" cx="1.2" fill="#fff6cf" />
+            <circle r="1.1" cx="1.2" fill="#ffffff" />
           </g>
         ))}
 
