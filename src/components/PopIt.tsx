@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { activity } from "@/lib/badgeActivity";
 import { haptic } from "@/lib/native/haptics";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,12 @@ export function PopIt({ onDone }: { onDone: () => void }) {
   }, []);
 
   const finished = left === 0;
+  const recorded = useRef(false);
+  useEffect(() => {
+    if (!finished || recorded.current) return;
+    recorded.current = true;
+    activity.popItCompleted();
+  }, [finished]);
   const message = ENCOURAGEMENTS[Math.floor((DURATION - left) / 12) % ENCOURAGEMENTS.length];
 
   const pop = (index: number) => {

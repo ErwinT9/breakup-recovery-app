@@ -1,10 +1,11 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Award, Flag, Home, LayoutGrid, LifeBuoy, Menu, Trophy } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { MoreDrawer } from "@/components/MoreDrawer";
 import { SosToolkit } from "@/components/SosToolkit";
+import { activity } from "@/lib/badgeActivity";
 import { haptic } from "@/lib/native/haptics";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,15 @@ export function AppShell({
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [sosOpen, setSosOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+
+  useEffect(() => {
+    activity.appOpened();
+  }, []);
+
+  useEffect(() => {
+    const tab = TABS.find((item) => item.to === pathname);
+    if (tab) activity.tabVisited(tab.label.toLowerCase());
+  }, [pathname]);
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col">

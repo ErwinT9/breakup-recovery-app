@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { flagRepo, letterRepo, winRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
 import { analytics } from "@/lib/analytics";
+import { activity } from "@/lib/badgeActivity";
 import { AFFIRMATIONS, GROUNDING_STEPS } from "@/lib/content";
 import { getSupportQuoteOfTheDay } from "@/lib/dailyQuote";
 import { haptic } from "@/lib/native/haptics";
@@ -53,11 +54,8 @@ export function SosToolkit({
       setTool("menu");
       analytics.track("sos_opened");
       void sosEncouragement();
-      try {
-        window.localStorage.setItem("nc:sos-used", "1");
-      } catch {
-        /* storage is optional */
-      }
+      activity.sosOpened();
+      activity.featureUsed("sos");
     }
   }, [open]);
 
