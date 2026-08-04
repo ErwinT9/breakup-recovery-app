@@ -33,6 +33,7 @@ import { MoodCheckIn, type MoodCheckInResult } from "@/components/MoodCheckIn";
 import { useAuth } from "@/hooks/useAuth";
 import { useDailyQuote } from "@/hooks/useDailyQuote";
 import { analytics, humanizeError } from "@/lib/analytics";
+import { activity } from "@/lib/badgeActivity";
 import { celebrate } from "@/lib/celebrate";
 import { actionByKey, BADGES, moodByKey } from "@/lib/content";
 import { useBadges } from "@/hooks/useBadges";
@@ -135,7 +136,11 @@ function HomeScreen() {
     },
     onSuccess: async () => {
       analytics.track("mood_checkin_saved");
-      await queryClient.invalidateQueries({ queryKey: ["mood-today", userId] });
+      activity.featureUsed("mood");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["mood-today", userId] }),
+        queryClient.invalidateQueries({ queryKey: ["moods", userId] }),
+      ]);
     },
     onError: (error) => toast.error(humanizeError(error)),
   });
