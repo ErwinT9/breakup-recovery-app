@@ -80,6 +80,7 @@ export const BADGES: BadgeDef[] = [
   { key: "day-3", label: "Day 3", description: "Past the first spike.", days: 3, tint: "bg-mint" },
   { key: "day-7", label: "Day 7", description: "One full week.", days: 7, tint: "bg-sky" },
   { key: "day-14", label: "Day 14", description: "Two weeks strong.", days: 14, tint: "bg-sky" },
+  { key: "day-21", label: "Day 21", description: "Three weeks of quiet.", days: 21, tint: "bg-sky" },
   { key: "day-30", label: "Day 30", description: "A whole month.", days: 30, tint: "bg-lavender" },
   { key: "day-60", label: "Day 60", description: "Sixty days of you.", days: 60, tint: "bg-lavender" },
   { key: "day-90", label: "Day 90", description: "The classic milestone.", days: 90, tint: "bg-coral" },
@@ -92,6 +93,23 @@ export const BADGES: BadgeDef[] = [
 ];
 
 export function earnedBadgeKeys(input: {
+  days: number;
+  flags: number;
+  wins: number;
+  letters: number;
+  sosUsed: boolean;
+}): string[] {
+  const keys = MILESTONE_BADGES.filter((badge) => input.days >= badge.days).map(
+    (badge) => badge.key,
+  );
+  if (input.flags >= 1) keys.push("healing-begins");
+  if (input.wins >= 5) keys.push("strong-mind");
+  if (input.letters >= 1) keys.push("fresh-start");
+  if (input.sosUsed) keys.push("resilient");
+  return keys;
+}
+
+function _unusedEarnedBadgeKeys(input: {
   days: number;
   flags: number;
   wins: number;
