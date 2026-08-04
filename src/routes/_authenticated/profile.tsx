@@ -50,7 +50,15 @@ import { analytics, humanizeError } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { haptic } from "@/lib/native/haptics";
 import { storage } from "@/lib/native/storage";
-import { requestNotificationPermission, syncReminders } from "@/lib/notifications";
+import {
+  DEFAULT_NOTIFICATION_PREFS,
+  NOTIFICATION_CATEGORIES,
+  loadNotificationPrefs,
+  requestNotificationPermission,
+  saveNotificationPrefs,
+  syncReminders,
+  type NotificationPrefs,
+} from "@/lib/notifications";
 import { flushQueue } from "@/lib/offline/syncQueue";
 
 export const Route = createFileRoute("/_authenticated/profile")({
@@ -68,21 +76,8 @@ export const Route = createFileRoute("/_authenticated/profile")({
   component: SettingsScreen,
 });
 
-type NotifPrefs = {
-  daily_motivation: boolean;
-  milestone: boolean;
-  sos: boolean;
-  streak: boolean;
-  offline: boolean;
-};
-
-const DEFAULT_NOTIFS: NotifPrefs = {
-  daily_motivation: true,
-  milestone: true,
-  sos: true,
-  streak: true,
-  offline: false,
-};
+type NotifPrefs = NotificationPrefs;
+const DEFAULT_NOTIFS: NotifPrefs = DEFAULT_NOTIFICATION_PREFS;
 
 function Row({
   icon: Icon,
@@ -130,7 +125,7 @@ function SettingsScreen() {
 
   useEffect(() => {
     analytics.screen("settings");
-    void storage.get<NotifPrefs>("nc:notif-prefs", DEFAULT_NOTIFS).then(setNotifs);
+    void loadNotificationPrefs().then(setNotifs);
     void storage.get<string>("nc:language", "en").then(setLanguage);
     void storage.get<string | null>("nc:last-sync", null).then(setLastSync);
   }, []);
@@ -168,7 +163,13 @@ function SettingsScreen() {
     const next = { ...notifs, ...patch };
     setNotifs(next);
     haptic.select();
-    await storage.set("nc:notif-prefs", next);
+    await saveNotificationPrefs(next);
+    await syncReminders({
+      enabled: profile.data?.notifications_enabled ?? false,
+      morning: profile.data?.morning_reminder ?? true,
+      evening: profile.data?.evening_reminder ?? true,
+      categories: next,
+    });
   };
 
   const toggleReminders = async (enabled: boolean) => {
@@ -179,6 +180,7 @@ function SettingsScreen() {
       enabled: enabled && granted,
       morning: profile.data?.morning_reminder ?? true,
       evening: profile.data?.evening_reminder ?? true,
+      categories: notifs,
     });
     if (enabled && !granted) toast("Enable notifications in your phone settings to get reminders.");
   };
@@ -352,13 +354,9 @@ function SettingsScreen() {
           </Row>
           {profile.data?.notifications_enabled ? (
             <div className="space-y-3">
-              {[
-                { key: "daily_motivation" as const, label: "Daily motivation" },
-                { key: "milestone" as const, label: "Milestone reminder" },
-                { key: "sos" as const, label: "SOS reminder" },
-                { key: "streak" as const, label: "Streak reminder" },
-                { key: "offline" as const, label: "Offline reminder" },
-              ].map(({ key, label }) => (
+              {NOTIFICATION_CATEGORIES.filter(
+                ({ key }) => key !== "morning" && key !== "evening",
+              ).map(({ key, label }) => (
                 <div key={key} className="flex items-center justify-between">
                   <span className="text-sm">{label}</span>
                   <Switch
