@@ -226,16 +226,16 @@ export function FireflyJar({
     const rect = svg.getBoundingClientRect();
     const point = "touches" in e ? e.touches[0] : (e as React.MouseEvent);
     if (!point) return;
-    const x = ((point.clientX - rect.left) / rect.width) * 200;
-    const y = ((point.clientY - rect.top) / rect.height) * 260;
+    const x = ((point.clientX - rect.left) / rect.width) * 260;
+    const y = ((point.clientY - rect.top) / rect.height) * 190;
     ripple.current = { x, y, t: performance.now() };
     setRippleKey((k) => k + 1);
   };
 
   return (
     <svg
-      viewBox="0 0 200 260"
-      className="mx-auto -my-4 block w-full max-w-[330px] cursor-pointer select-none"
+      viewBox="0 0 260 190"
+      className="mx-auto -my-2 block w-full max-w-[300px] cursor-pointer select-none"
       role="img"
       aria-label={`${days} days no contact. Today is ${Math.round(progress * 100)}% complete.`}
       onPointerDown={handleTap as unknown as React.MouseEventHandler<SVGSVGElement>}
@@ -270,27 +270,27 @@ export function FireflyJar({
       {/* accumulated warmth from the fireflies (never from the glass itself) */}
       <ellipse
         cx={CX}
-        cy={CY + 6}
-        rx="86"
-        ry="96"
+        cy={CY + 4}
+        rx="98"
+        ry="72"
         fill={`url(#${uid}-ambient)`}
         opacity={0.1 + progress * 0.45}
       />
 
       {/* cork */}
-      <path d="M74 24h52v22c0 4-3 6-8 6H82c-5 0-8-2-8-6V24Z" fill={`url(#${uid}-cork)`} />
-      <rect x="78" y="20" width="44" height="8" rx="4" fill="#e0b688" opacity="0.8" />
-      <path d="M74 34h52" stroke="#8d6538" strokeWidth="1" opacity="0.35" />
+      <path d="M112 24h36v18c0 4-3 6-7 6h-22c-4 0-7-2-7-6V24Z" fill={`url(#${uid}-cork)`} />
+      <rect x="108" y="19" width="44" height="8" rx="4" fill="#e0b688" opacity="0.8" />
+      <path d="M112 33h36" stroke="#8d6538" strokeWidth="1" opacity="0.35" />
 
       {/* glass body */}
       <path d={JAR_PATH} fill={`url(#${uid}-glass)`} stroke="#a9b7c4" strokeWidth="2.2" strokeLinejoin="round" />
       {/* inner wall line — reads as glass thickness */}
       <path d={INNER_PATH} fill="none" stroke="#c6d3de" strokeWidth="1.1" opacity="0.75" />
       {/* neck rings */}
-      <path d="M70 52h60" stroke="#a9b7c4" strokeWidth="1.6" opacity="0.8" />
-      <path d="M67 66h66" stroke="#c1cedb" strokeWidth="1.2" opacity="0.7" />
+      <path d="M110 46h40" stroke="#a9b7c4" strokeWidth="1.6" opacity="0.8" />
+      <path d="M104 62h52" stroke="#c1cedb" strokeWidth="1.2" opacity="0.6" />
       {/* flat base */}
-      <path d="M60 205h80" stroke="#c1cedb" strokeWidth="1.2" opacity="0.7" />
+      <path d="M78 161h104" stroke="#c1cedb" strokeWidth="1.2" opacity="0.6" />
 
       <g clipPath={`url(#${uid}-clip)`}>
         {slots.map((i) => (
@@ -325,7 +325,7 @@ export function FireflyJar({
 
       {/* soft glass highlights */}
       <path
-        d="M67 96c-3 22-3 46 1 68"
+        d="M62 118c-2 16 2 28 10 36"
         stroke="#ffffff"
         strokeWidth="5"
         strokeLinecap="round"
@@ -333,7 +333,7 @@ export function FireflyJar({
         fill="none"
       />
       <path
-        d="M78 92c-2 14-2 28 0 40"
+        d="M76 106c-4 12-4 22-1 30"
         stroke="#ffffff"
         strokeWidth="2"
         strokeLinecap="round"
@@ -341,7 +341,7 @@ export function FireflyJar({
         fill="none"
       />
       <path
-        d="M136 110c2 26 2 52 0 74"
+        d="M192 112c4 14 3 28-3 38"
         stroke="#ffffff"
         strokeWidth="2.5"
         strokeLinecap="round"
@@ -353,16 +353,16 @@ export function FireflyJar({
       <g pointerEvents="none">
         <text
           x={CX}
-          y={CY + 8}
+          y={CY + 6}
           textAnchor="middle"
           className="fill-on-tint"
-          style={{ fontSize: 54, fontWeight: 600, letterSpacing: "-0.02em" }}
+          style={{ fontSize: 48, fontWeight: 600, letterSpacing: "-0.02em" }}
         >
           {days}
         </text>
         <text
           x={CX}
-          y={CY + 32}
+          y={CY + 27}
           textAnchor="middle"
           className="fill-on-tint"
           style={{ fontSize: 15, fontWeight: 500, opacity: 0.7 }}
