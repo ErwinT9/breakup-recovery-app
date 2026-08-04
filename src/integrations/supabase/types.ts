@@ -255,6 +255,7 @@ export type Database = {
           id: string
           is_premium: boolean
           morning_reminder: boolean
+          notification_prefs: Json
           notifications_enabled: boolean
           push_token: string | null
           questionnaire_completed: boolean
@@ -270,6 +271,7 @@ export type Database = {
           id: string
           is_premium?: boolean
           morning_reminder?: boolean
+          notification_prefs?: Json
           notifications_enabled?: boolean
           push_token?: string | null
           questionnaire_completed?: boolean
@@ -285,11 +287,45 @@ export type Database = {
           id?: string
           is_premium?: boolean
           morning_reminder?: boolean
+          notification_prefs?: Json
           notifications_enabled?: boolean
           push_token?: string | null
           questionnaire_completed?: boolean
           recovery_started_at?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      push_tokens: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          id: string
+          is_active: boolean
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          is_active?: boolean
+          platform?: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          id?: string
+          is_active?: boolean
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
