@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { analytics, humanizeError } from "@/lib/analytics";
+import { cleanAuthFragment, waitForOAuthSession } from "@/lib/auth/oauthHash";
 import { haptic } from "@/lib/native/haptics";
 
 export const Route = createFileRoute("/auth")({
@@ -46,7 +47,18 @@ function AuthScreen() {
   }, []);
 
   useEffect(() => {
-    if (session) void navigate({ to: "/home" });
+    let cancelled = false;
+    void waitForOAuthSession().then((oauthSession) => {
+      if (cancelled) return;
+      if (oauthSession) void navigate({ to: "/home", replace: true });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
+  useEffect(() => {
+    if (session) void navigate({ to: "/home", replace: true });
   }, [session, navigate]);
 
   const google = async () => {
@@ -54,10 +66,13 @@ function AuthScreen() {
     setBusy(true);
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/home` },
+      options: { redirectTo: `${window.location.origin}/auth` },
     });
     setBusy(false);
-    if (oauthError) toast.error(humanizeError(oauthError));
+    if (oauthError) {
+      cleanAuthFragment();
+      toast.error(humanizeError(oauthError));
+    }
   };
 
   const submit = async (event: React.FormEvent) => {
