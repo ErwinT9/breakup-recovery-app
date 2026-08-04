@@ -15,6 +15,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SubscriptionProvider } from "@/hooks/useSubscription";
 import { installGlobalErrorHandlers } from "@/lib/analytics";
+import { migrateAppState } from "@/lib/appState/migrate";
 import { startNetworkWatcher } from "@/lib/offline/network";
 import { startSyncEngine } from "@/lib/offline/syncQueue";
 
@@ -143,6 +144,7 @@ function RootComponent() {
 
   useEffect(() => {
     installGlobalErrorHandlers();
+    void migrateAppState();
     startNetworkWatcher();
     startSyncEngine();
   }, []);
