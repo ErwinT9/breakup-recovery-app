@@ -11,6 +11,7 @@ import type {
   Flag,
   JournalEntry,
   Letter,
+  MoodCheckin,
   Picture,
   Profile,
   QuestionnaireAnswers,
@@ -41,6 +42,7 @@ const CACHES = [
   "rituals",
   "triggers",
   "journal",
+  "moods",
 ] as const;
 
 async function cacheRead<T>(name: string, userId: string, fallback: T): Promise<T> {
@@ -453,5 +455,63 @@ export const promiseRepo = {
     const list = await promiseList.list(userId);
     if (list.some((item) => item.promised_on === today)) return list;
     return promiseList.save(userId, { promised_on: today });
+  },
+};
+
+/** Local (device-timezone) calendar day key, so check-ins roll over at midnight. */
+export function localDayKey(date: Date = new Date()): string {
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
+}
+
+export const moodRepo = {
+  async list(userId: string): Promise<MoodCheckin[]> {
+    return readThrough<MoodCheckin[]>("moods", userId, [], async () => {
+      const { data, error } = await supabase
+        .from("mood_checkins")
+        .select("*")
+        .eq("user_id", userId)
+        .order("checkin_on", { ascending: false })
+        .limit(180);
+      if (error) throw error;
+      return (data ?? []) as unknown as MoodCheckin[];
+    });
+  },
+  async today(userId: string): Promise<MoodCheckin | null> {
+    const list = await moodRepo.list(userId);
+    const today = localDayKey();
+    return list.find((item) => item.checkin_on === today) ?? null;
+  },
+  async save(
+    userId: string,
+    input: { mood: string; action: string | null; custom_intention: string | null },
+  ): Promise<MoodCheckin[]> {
+    const list = await cacheRead<MoodCheckin[]>("moods", userId, []);
+    const today = localDayKey();
+    const existing = list.find((item) => item.checkin_on === today);
+    const now = new Date().toISOString();
+    const row: MoodCheckin = {
+      id: existing?.id ?? newId(),
+      user_id: userId,
+      checkin_on: today,
+      mood: input.mood,
+      action: input.action,
+      custom_intention: input.custom_intention,
+      completed_at: now,
+      created_at: existing?.created_at ?? now,
+    };
+    const next = [row, ...list.filter((item) => item.id !== row.id)];
+    await cacheWrite("moods", userId, next);
+    await writeThrough("mood_checkins", row.id, { ...row }, "user_id,checkin_on");
+    return next;
+  },
+  async removeToday(userId: string): Promise<MoodCheckin[]> {
+    const list = await cacheRead<MoodCheckin[]>("moods", userId, []);
+    const today = localDayKey();
+    const existing = list.find((item) => item.checkin_on === today);
+    const next = list.filter((item) => item.checkin_on !== today);
+    await cacheWrite("moods", userId, next);
+    if (existing) await enqueue({ id: existing.id, table: "mood_checkins", op: "delete", payload: { id: existing.id } });
+    return next;
   },
 };
