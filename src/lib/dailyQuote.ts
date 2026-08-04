@@ -1,6 +1,6 @@
-import QUOTE_LIBRARY from "./quotes.json";
+import { quotes, type Quote } from "@/data/quotes";
 
-export const DAILY_QUOTES: string[] = QUOTE_LIBRARY as string[];
+export const DAILY_QUOTES: string[] = quotes.map((q: Quote) => q.text);
 
 const STORAGE_KEY = "nc:daily-quote";
 
