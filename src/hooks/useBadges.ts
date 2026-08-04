@@ -37,6 +37,7 @@ import { celebrate } from "@/lib/celebrate";
 import { daysSince } from "@/lib/streak";
 
 const EMPTY_ACTIVITY = getActivity();
+const EMPTY_LIST: never[] = [];
 
 /** Reactive view of the local activity counters. */
 export function useActivity(): ActivityState {
@@ -67,24 +68,22 @@ export function useBadges(options: { autoUnlock?: boolean } = {}): BadgeState {
   const queryClient = useQueryClient();
   const activity = useActivity();
 
-  const q = <T,>(key: string, fn: () => Promise<T>, fallback: T) =>
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useQuery({ queryKey: [key, userId], queryFn: fn, enabled }).data ?? fallback;
-
-  const streak = q("streak", () => streakRepo.get(userId), null);
-  const profile = q("profile", () => profileRepo.get(userId), null);
-  const flags = q("flags", () => flagRepo.list(userId), []);
-  const wins = q("wins", () => winRepo.list(userId), []);
-  const letters = q("letters", () => letterRepo.list(userId), []);
-  const journal = q("journal", () => journalRepo.list(userId), []);
-  const pictures = q("pictures", () => pictureRepo.list(userId), []);
-  const triggers = q("triggers", () => triggerRepo.list(userId), []);
-  const moods = q("moods", () => moodRepo.list(userId), []);
-  const badges = q("badges", () => badgeRepo.list(userId), []);
+  const streak = useQuery({ queryKey: ["streak", userId], queryFn: () => streakRepo.get(userId), enabled }).data ?? null;
+  const profile = useQuery({ queryKey: ["profile", userId], queryFn: () => profileRepo.get(userId), enabled }).data ?? null;
+  const flags = useQuery({ queryKey: ["flags", userId], queryFn: () => flagRepo.list(userId), enabled }).data ?? EMPTY_LIST;
+  const wins = useQuery({ queryKey: ["wins", userId], queryFn: () => winRepo.list(userId), enabled }).data ?? EMPTY_LIST;
+  const letters = useQuery({ queryKey: ["letters", userId], queryFn: () => letterRepo.list(userId), enabled }).data ?? EMPTY_LIST;
+  const journal = useQuery({ queryKey: ["journal", userId], queryFn: () => journalRepo.list(userId), enabled }).data ?? EMPTY_LIST;
+  const pictures = useQuery({ queryKey: ["pictures", userId], queryFn: () => pictureRepo.list(userId), enabled }).data ?? EMPTY_LIST;
+  const triggers = useQuery({ queryKey: ["triggers", userId], queryFn: () => triggerRepo.list(userId), enabled }).data ?? EMPTY_LIST;
+  const moods = useQuery({ queryKey: ["moods", userId], queryFn: () => moodRepo.list(userId), enabled }).data ?? EMPTY_LIST;
+  const badges = useQuery({ queryKey: ["badges", userId], queryFn: () => badgeRepo.list(userId), enabled }).data ?? EMPTY_LIST;
 
   const stats = useMemo<BadgeStats>(() => {
     if (!enabled) return EMPTY_BADGE_STATS;
-    const journalDays = journal.map((entry) => localDayKey(new Date(entry.created_at)));
+    const journalDays = (journal as { created_at: string }[]).map((entry) =>
+      localDayKey(new Date(entry.created_at)),
+    );
     return {
       days: streak?.started_at ? daysSince(streak.started_at) : 0,
       journalEntries: journal.length,
