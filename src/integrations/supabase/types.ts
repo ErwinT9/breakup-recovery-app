@@ -179,6 +179,42 @@ export type Database = {
         }
         Relationships: []
       }
+      mood_checkins: {
+        Row: {
+          action: string | null
+          checkin_on: string
+          completed_at: string
+          created_at: string
+          custom_intention: string | null
+          id: string
+          mood: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          action?: string | null
+          checkin_on?: string
+          completed_at?: string
+          created_at?: string
+          custom_intention?: string | null
+          id?: string
+          mood: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          action?: string | null
+          checkin_on?: string
+          completed_at?: string
+          created_at?: string
+          custom_intention?: string | null
+          id?: string
+          mood?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pictures: {
         Row: {
           caption: string | null
