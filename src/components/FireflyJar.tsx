@@ -2,16 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 const MAX_FIREFLIES = 30;
 
-/** Jar interior bounds in SVG user units (viewBox 0 0 200 260). */
-const IN = { x0: 52, x1: 148, y0: 76, y1: 212 };
+/** Jar interior bounds in SVG user units (viewBox 0 0 260 190). */
+const IN = { x0: 56, x1: 204, y0: 78, y1: 162 };
 const CX = (IN.x0 + IN.x1) / 2;
 const CY = (IN.y0 + IN.y1) / 2;
 
-/** Glass silhouette: short neck, rounded shoulders, straight sides, flat base. */
+/** Compact rounded firefly jar: wide belly, short neck, small cork, flat base. */
 const JAR_PATH =
-  "M70 52 h60 v14 c0 6 3 9 8 14 c8 8 12 16 12 28 v96 c0 8 -5 13 -13 13 h-74 c-8 0 -13 -5 -13 -13 v-96 c0 -12 4 -20 12 -28 c5 -5 8 -8 8 -14 z";
+  "M110 46 h40 v13 c0 5 3 8 8 10 c34 12 56 34 56 62 v13 c0 14 -10 24 -26 24 h-116 c-16 0 -26 -10 -26 -24 v-13 c0 -28 22 -50 56 -62 c5 -2 8 -5 8 -10 z";
 const INNER_PATH =
-  "M75 56 h50 v11 c0 7 3 11 8 16 c6 7 9 13 9 23 v94 c0 5 -3 8 -8 8 h-68 c-5 0 -8 -3 -8 -8 v-94 c0 -10 3 -16 9 -23 c5 -5 8 -9 8 -16 z";
+  "M114 50 h32 v10 c0 5 3 8 8 10 c31 11 50 31 50 56 v12 c0 11 -8 19 -21 19 h-108 c-13 0 -21 -8 -21 -19 v-12 c0 -25 19 -45 50 -56 c5 -2 8 -5 8 -10 z";
 
 type Fly = {
   id: number;
