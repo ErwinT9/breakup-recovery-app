@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { DailyTasks } from "@/components/DailyTasks";
+import { HealingProgress } from "@/components/HealingProgress";
 import { SoftCard } from "@/components/SoftCard";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +37,7 @@ import { celebrate } from "@/lib/celebrate";
 import { actionByKey, BADGES, earnedBadgeKeys, moodByKey } from "@/lib/content";
 import { haptic } from "@/lib/native/haptics";
 import { celebrateMilestone } from "@/lib/notifications";
-import { daysSince, elapsedSince, milestoneProgress, nextMilestone } from "@/lib/streak";
+import { daysSince, elapsedSince } from "@/lib/streak";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({
@@ -62,6 +63,26 @@ function useTick(intervalMs = 1000) {
 }
 
 function Unit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <span className="text-2xl font-semibold tabular-nums">
+        {String(value).padStart(2, "0")}
+      </span>
+      <span className="text-[0.65rem] tracking-wide text-muted-foreground uppercase">{label}</span>
+    </div>
+  );
+}
+
+/** Display-only capitalization of the stored display name. */
+function capitalizeName(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function UnusedUnit({ value, label }: { value: number; label: string }) {
   return (
     <div className="flex flex-col items-center">
       <span className="text-2xl font-semibold tabular-nums">
@@ -153,8 +174,6 @@ function HomeScreen() {
   const startedAt = streak.data?.started_at;
   const elapsed = elapsedSince(startedAt ?? new Date().toISOString());
   const days = startedAt ? daysSince(startedAt) : 0;
-  const target = nextMilestone(days);
-  const progress = milestoneProgress(days);
 
   useEffect(() => {
     if (!userId || !startedAt) return;
@@ -207,10 +226,12 @@ function HomeScreen() {
       return;
     }
     void celebrate();
+    toast(`🎉 Badge Unlocked: ${milestoneHit.label}`);
     void celebrateMilestone(milestoneHit.label);
   }, [milestoneHit, days]);
 
-  const name = profile.data?.display_name;
+  const rawName = profile.data?.display_name;
+  const name = rawName ? capitalizeName(rawName) : "";
 
   return (
     <AppShell
@@ -235,23 +256,7 @@ function HomeScreen() {
           </div>
         </SoftCard>
 
-        <SoftCard>
-          <div className="flex items-baseline justify-between">
-            <p className="font-medium">Next milestone</p>
-            <p className="text-sm text-muted-foreground">
-              Day {target} · {Math.max(0, target - days)} to go
-            </p>
-          </div>
-          <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${Math.round(progress * 100)}%` }}
-            />
-          </div>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Best streak so far: {Math.max(streak.data?.best_days ?? 0, days)} days
-          </p>
-        </SoftCard>
+        <HealingProgress days={days} bestDays={streak.data?.best_days ?? 0} />
 
         <DailyTasks />
 
