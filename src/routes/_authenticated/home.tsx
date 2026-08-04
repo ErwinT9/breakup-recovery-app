@@ -165,6 +165,11 @@ function HomeScreen() {
   const elapsed = elapsedSince(startedAt ?? new Date().toISOString());
   const days = startedAt ? daysSince(startedAt) : 0;
 
+  // Share of the current calendar day that has passed — drives the firefly jar.
+  const now = new Date();
+  const dayProgress =
+    (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
+
   useEffect(() => {
     if (!userId || !startedAt) return;
     let sosUsed = false;
