@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Mail, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowRight, HeartHandshake, Mail, RotateCcw, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -18,11 +18,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { badgeRepo, flagRepo, letterRepo, profileRepo, streakRepo, winRepo } from "@/data/repository";
+import {
+  badgeRepo,
+  flagRepo,
+  letterRepo,
+  moodRepo,
+  profileRepo,
+  streakRepo,
+  winRepo,
+} from "@/data/repository";
+import { MoodCheckIn, type MoodCheckInResult } from "@/components/MoodCheckIn";
 import { useAuth } from "@/hooks/useAuth";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { celebrate } from "@/lib/celebrate";
-import { BADGES, earnedBadgeKeys, pickForDay, QUOTES } from "@/lib/content";
+import { actionByKey, BADGES, earnedBadgeKeys, moodByKey, pickForDay, QUOTES } from "@/lib/content";
 import { haptic } from "@/lib/native/haptics";
 import { celebrateMilestone } from "@/lib/notifications";
 import { daysSince, elapsedSince, milestoneProgress, nextMilestone } from "@/lib/streak";
@@ -97,6 +106,41 @@ function HomeScreen() {
     queryFn: () => letterRepo.list(userId),
     enabled: Boolean(userId),
   });
+  const todayMood = useQuery({
+    queryKey: ["mood-today", userId],
+    queryFn: () => moodRepo.today(userId),
+    enabled: Boolean(userId),
+  });
+
+  const [checkInOpen, setCheckInOpen] = useState(false);
+
+  const saveCheckIn = useMutation({
+    mutationFn: async (result: MoodCheckInResult) => {
+      if (!userId) return;
+      await moodRepo.save(userId, result);
+    },
+    onSuccess: async () => {
+      analytics.track("mood_checkin_saved");
+      await queryClient.invalidateQueries({ queryKey: ["mood-today", userId] });
+    },
+    onError: (error) => toast.error(humanizeError(error)),
+  });
+
+  const resetCheckIn = useMutation({
+    mutationFn: async () => {
+      if (!userId) return;
+      await moodRepo.removeToday(userId);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["mood-today", userId] });
+      toast("Check-in cleared. You can check in again.");
+    },
+    onError: (error) => toast.error(humanizeError(error)),
+  });
+
+  const checkin = todayMood.data ?? null;
+  const checkinMood = moodByKey(checkin?.mood);
+  const checkinAction = actionByKey(checkin?.action);
 
   useEffect(() => {
     if (profile.isLoading || profile.isFetching || !profile.data) return;
@@ -251,6 +295,97 @@ function HomeScreen() {
             </p>
           </div>
         </SoftCard>
+
+
+        {checkin ? (
+          <SoftCard className="animate-rise space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs tracking-wide text-muted-foreground uppercase">Today's mood</p>
+                <p className="mt-1 font-medium">
+                  <span aria-hidden>{checkinMood?.emoji ?? "🫶"}</span>{" "}
+                  {checkinMood?.label ?? checkin.mood}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs tracking-wide text-muted-foreground uppercase">
+                  Today's intention
+                </p>
+                <p className="mt-1 font-medium">
+                  {checkinAction ? (
+                    <>
+                      <span aria-hidden>{checkinAction.emoji}</span> {checkinAction.label}
+                    </>
+                  ) : (
+                    (checkin.custom_intention ?? "—")
+                  )}
+                </p>
+              </div>
+            </div>
+            {checkinAction && checkin.custom_intention ? (
+              <p className="text-sm text-muted-foreground">{checkin.custom_intention}</p>
+            ) : null}
+            <p className="text-sm text-muted-foreground">
+              Completed at{" "}
+              {new Date(checkin.completed_at).toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "2-digit",
+              })}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                className="press h-11 flex-1 rounded-2xl"
+                onClick={() => {
+                  haptic.light();
+                  setCheckInOpen(true);
+                }}
+              >
+                View today's check-in
+              </Button>
+              <Button
+                variant="ghost"
+                className="press h-11 rounded-2xl text-muted-foreground"
+                disabled={resetCheckIn.isPending}
+                onClick={() => resetCheckIn.mutate()}
+              >
+                Reset
+              </Button>
+            </div>
+          </SoftCard>
+        ) : (
+          <SoftCard className="animate-rise">
+            <div className="flex items-start gap-3">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-lavender">
+                <HeartHandshake className="size-5 text-on-tint" aria-hidden />
+              </span>
+              <div className="flex-1">
+                <p className="font-medium">🫶 Daily Mood Check-In</p>
+                <p className="text-sm text-muted-foreground">
+                  Pause for a minute. Check in with yourself.
+                </p>
+              </div>
+            </div>
+            <Button
+              className="press mt-4 h-12 w-full rounded-2xl"
+              onClick={() => {
+                haptic.light();
+                setCheckInOpen(true);
+              }}
+            >
+              Check In
+            </Button>
+          </SoftCard>
+        )}
+
+        <MoodCheckIn
+          open={checkInOpen}
+          onOpenChange={setCheckInOpen}
+          saving={saveCheckIn.isPending}
+          onComplete={async (result) => {
+            await saveCheckIn.mutateAsync(result);
+          }}
+        />
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
