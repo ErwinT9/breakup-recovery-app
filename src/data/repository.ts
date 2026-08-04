@@ -41,6 +41,7 @@ const CACHES = [
   "rituals",
   "triggers",
   "journal",
+  "moods",
 ] as const;
 
 async function cacheRead<T>(name: string, userId: string, fallback: T): Promise<T> {
