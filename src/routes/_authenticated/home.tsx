@@ -203,7 +203,6 @@ function HomeScreen() {
       return;
     }
     void celebrate();
-    toast(`🎉 Badge Unlocked: ${milestoneHit.label}`);
     void celebrateMilestone(milestoneHit.label);
   }, [milestoneHit, days]);
 
