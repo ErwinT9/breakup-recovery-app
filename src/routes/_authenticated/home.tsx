@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
 import { DailyTasks } from "@/components/DailyTasks";
+import { FireflyJar } from "@/components/FireflyJar";
 import { HealingProgress } from "@/components/HealingProgress";
 import { SoftCard } from "@/components/SoftCard";
 import { Button } from "@/components/ui/button";
@@ -233,12 +234,8 @@ function HomeScreen() {
     >
       <div className="space-y-4">
         <SoftCard className="bg-mint text-center">
-          <p className="text-sm font-medium text-on-tint/70">No contact for</p>
-          <p className="mt-1 text-6xl font-semibold tabular-nums text-on-tint">{elapsed.days}</p>
-          <p className="text-sm font-medium text-on-tint/70">
-            {elapsed.days === 1 ? "day" : "days"}
-          </p>
-          <div className="mt-5 flex items-center justify-center gap-6 text-on-tint">
+          <FireflyJar days={elapsed.days} dailyProgress={dayProgress} />
+          <div className="mt-4 flex items-center justify-center gap-6 text-on-tint">
             <Unit value={elapsed.hours} label="hrs" />
             <Unit value={elapsed.minutes} label="min" />
             <Unit value={elapsed.seconds} label="sec" />
