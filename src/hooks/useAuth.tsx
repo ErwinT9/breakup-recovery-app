@@ -2,6 +2,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
+import { deactivatePushToken, syncPushRegistration } from "@/lib/notifications/push";
 import { identifyUser, logOutRevenueCat } from "@/lib/subscription/revenuecat";
 
 type AuthValue = {
@@ -26,12 +27,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setLoading(false);
-      if (nextSession?.user) void identifyUser(nextSession.user.id);
+      if (nextSession?.user) {
+        void identifyUser(nextSession.user.id);
+        void syncPushRegistration(nextSession.user.id);
+      }
     });
 
     void supabase.auth.getSession().then(({ data: current }) => {
       setSession(current.session);
       setLoading(false);
+      if (current.session?.user) void syncPushRegistration(current.session.user.id);
     });
 
     return () => data.subscription.unsubscribe();
@@ -43,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       loading,
       signOut: async () => {
+        await deactivatePushToken(session?.user?.id ?? null);
         await logOutRevenueCat();
         await supabase.auth.signOut();
         setSession(null);
