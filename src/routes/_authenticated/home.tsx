@@ -245,7 +245,7 @@ function HomeScreen() {
           </div>
         </SoftCard>
 
-        <HealingProgress days={days} bestDays={streak.data?.best_days ?? 0} />
+        <HealingProgress startedAt={startedAt} bestDays={streak.data?.best_days ?? 0} />
 
         <DailyTasks />
 
