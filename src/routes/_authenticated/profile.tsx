@@ -44,6 +44,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { clearUserCache, profileRepo, streakRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
+import { activity } from "@/lib/badgeActivity";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import { useSubscription } from "@/hooks/useSubscription";
 import { analytics, humanizeError } from "@/lib/analytics";
@@ -155,7 +156,10 @@ function SettingsScreen() {
   const update = useMutation({
     mutationFn: async (patch: Parameters<typeof profileRepo.update>[1]) =>
       profileRepo.update(userId, patch),
-    onSuccess: (next) => queryClient.setQueryData(["profile", userId], next),
+    onSuccess: (next) => {
+      queryClient.setQueryData(["profile", userId], next);
+      if (next.display_name) activity.profileSetupDone();
+    },
     onError: (error) => toast.error(humanizeError(error)),
   });
 

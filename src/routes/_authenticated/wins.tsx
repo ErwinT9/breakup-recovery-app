@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { winRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
+import { activity } from "@/lib/badgeActivity";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { celebrate } from "@/lib/celebrate";
 import { WIN_SUGGESTIONS } from "@/lib/content";
@@ -61,6 +62,7 @@ function WinsScreen() {
     mutationFn: async (value: string) =>
       winRepo.save(userId, { title: value.trim(), note: note.trim() || null }),
     onSuccess: (rows) => {
+      activity.featureUsed("wins");
       queryClient.setQueryData(["wins", userId], rows);
       haptic.success();
       void celebrate();

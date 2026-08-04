@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/useAuth";
 import { humanizeError } from "@/lib/analytics";
+import { activity, TRACKED_FEATURES } from "@/lib/badgeActivity";
 import { haptic } from "@/lib/native/haptics";
 
 type Row = { id: string; created_at: string } & Record<string, unknown>;
@@ -65,6 +66,9 @@ export function ActivityListScreen({
     },
     onSuccess: (rows) => {
       queryClient.setQueryData([cacheKey, userId], rows);
+      if ((TRACKED_FEATURES as readonly string[]).includes(cacheKey)) {
+        activity.featureUsed(cacheKey as (typeof TRACKED_FEATURES)[number]);
+      }
       setMain("");
       setNote("");
       haptic.success();

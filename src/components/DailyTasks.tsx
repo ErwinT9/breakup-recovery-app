@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { BookOpen, Camera, CheckCircle2, ChevronDown, Circle, Flame } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { SoftCard } from "@/components/SoftCard";
 import { journalRepo, localDayKey, pictureRepo, triggerRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
+import { activity } from "@/lib/badgeActivity";
 import { haptic } from "@/lib/native/haptics";
 import { cn } from "@/lib/utils";
 
@@ -69,6 +70,10 @@ export function DailyTasks() {
   ];
 
   const completed = tasks.filter((task) => task.done).length;
+  const allDone = completed === tasks.length;
+  useEffect(() => {
+    if (allDone) activity.dailyTasksCompleted();
+  }, [allDone]);
   const progress = Math.round((completed / tasks.length) * 100);
 
   return (

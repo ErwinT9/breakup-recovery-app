@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { analytics } from "@/lib/analytics";
+import { activity } from "@/lib/badgeActivity";
 import { isNative, platformName, safeNative } from "@/lib/native/platform";
 import { storage } from "@/lib/native/storage";
 
@@ -70,6 +71,10 @@ async function wireListeners(): Promise<void> {
     });
     await PushNotifications.addListener("pushNotificationReceived", (notification) => {
       analytics.track("push_received", { title: notification.title ?? "" });
+    });
+    await PushNotifications.addListener("pushNotificationActionPerformed", () => {
+      analytics.track("push_opened");
+      activity.notificationReturn();
     });
   });
 }

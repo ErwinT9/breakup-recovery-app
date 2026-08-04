@@ -1,3 +1,4 @@
+import { activity } from "@/lib/badgeActivity";
 import { isNative, safeNative } from "@/lib/native/platform";
 
 import {
@@ -15,6 +16,20 @@ import {
  */
 
 const CHANNEL_ID = "no-contact-reminders";
+
+let tapsWired = false;
+
+/** Credits the "Never Missed" badge when a reminder brings the user back. */
+export async function wireNotificationTaps(): Promise<void> {
+  if (tapsWired || !isNative()) return;
+  tapsWired = true;
+  await safeNative(async () => {
+    const LocalNotifications = await localPlugin();
+    await LocalNotifications.addListener("localNotificationActionPerformed", () => {
+      activity.notificationReturn();
+    });
+  });
+}
 
 async function localPlugin() {
   const mod = await import("@capacitor/local-notifications");
