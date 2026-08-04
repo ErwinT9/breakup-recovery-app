@@ -19,3 +19,30 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+
+# ---- Capacitor / plugins ----
+-keep class com.getcapacitor.** { *; }
+-keep @com.getcapacitor.annotation.CapacitorPlugin class * { *; }
+-keep class * extends com.getcapacitor.Plugin { *; }
+-keepclassmembers class * {
+    @com.getcapacitor.PluginMethod public <methods>;
+}
+-keep class org.apache.cordova.** { *; }
+
+# WebView JS bridge
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
+
+# ---- Firebase Cloud Messaging ----
+-keep class com.google.firebase.** { *; }
+-dontwarn com.google.firebase.**
+
+# ---- RevenueCat ----
+-keep class com.revenuecat.purchases.** { *; }
+-dontwarn com.revenuecat.purchases.**
+
+# Keep annotations & source info for readable crash reports
+-keepattributes *Annotation*, Signature, InnerClasses, SourceFile, LineNumberTable
+-renamesourcefileattribute SourceFile

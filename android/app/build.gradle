@@ -47,7 +47,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         debug {
-            applicationIdSuffix ".debug"
+            // No applicationIdSuffix: the package must keep matching
+            // google-services.json or FCM stops delivering in debug builds.
             versionNameSuffix "-debug"
         }
     }
