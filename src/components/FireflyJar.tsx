@@ -2,8 +2,16 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 const MAX_FIREFLIES = 18;
 
-/** Jar interior bounds in SVG user units (viewBox 0 0 200 240). */
-const BOUNDS = { cx: 100, cy: 132, rx: 62, ry: 66 };
+/** Jar interior bounds in SVG user units (viewBox 0 0 200 260). */
+const IN = { x0: 52, x1: 148, y0: 76, y1: 212 };
+const CX = (IN.x0 + IN.x1) / 2;
+const CY = (IN.y0 + IN.y1) / 2;
+
+/** Glass silhouette: short neck, rounded shoulders, straight sides, flat base. */
+const JAR_PATH =
+  "M70 52 h60 v14 c0 6 3 9 8 14 c8 8 12 16 12 28 v96 c0 8 -5 13 -13 13 h-74 c-8 0 -13 -5 -13 -13 v-96 c0 -12 4 -20 12 -28 c5 -5 8 -8 8 -14 z";
+const INNER_PATH =
+  "M75 56 h50 v11 c0 7 3 11 8 16 c6 7 9 13 9 23 v94 c0 5 -3 8 -8 8 h-68 c-5 0 -8 -3 -8 -8 v-94 c0 -10 3 -16 9 -23 c5 -5 8 -9 8 -16 z";
 
 type Fly = {
   id: number;
@@ -12,12 +20,13 @@ type Fly = {
   vx: number;
   vy: number;
   r: number;
+  bright: number;
   phase: number;
+  flicker: number;
   speed: number;
   seed: number;
   state: "in" | "out";
   opacity: number;
-  born: number;
 };
 
 function usePrefersReducedMotion(): boolean {
@@ -33,28 +42,26 @@ function usePrefersReducedMotion(): boolean {
 }
 
 function spawn(id: number): Fly {
-  const a = Math.random() * Math.PI * 2;
-  const d = Math.sqrt(Math.random());
   return {
     id,
-    x: BOUNDS.cx + Math.cos(a) * BOUNDS.rx * 0.8 * d,
-    y: BOUNDS.cy + Math.sin(a) * BOUNDS.ry * 0.8 * d,
+    x: IN.x0 + 12 + Math.random() * (IN.x1 - IN.x0 - 24),
+    y: IN.y0 + 12 + Math.random() * (IN.y1 - IN.y0 - 24),
     vx: (Math.random() - 0.5) * 6,
     vy: (Math.random() - 0.5) * 6,
-    r: 2.1 + Math.random() * 1.5,
+    r: 0.75 + Math.random() * 0.75,
+    bright: 0.6 + Math.random() * 0.4,
     phase: Math.random() * Math.PI * 2,
-    speed: 0.6 + Math.random() * 0.6,
+    flicker: 0.8 + Math.random() * 1.9,
+    speed: 0.55 + Math.random() * 0.65,
     seed: Math.random() * 1000,
     state: "in",
     opacity: 0,
-    born: performance.now(),
   };
 }
 
 /**
- * Illustrated glass jar whose fireflies represent progress through the current day.
- * All motion is encapsulated here and driven by a single rAF loop mutating DOM
- * transforms directly, so React never re-renders per frame.
+ * Illustrated transparent glass jar whose fireflies represent progress through
+ * the current day. All motion lives in one rAF loop mutating DOM directly.
  */
 export function FireflyJar({
   days,
@@ -77,7 +84,7 @@ export function FireflyJar({
 
   targetRef.current = target;
 
-  const glowId = useMemo(() => `ffglow-${Math.random().toString(36).slice(2, 8)}`, []);
+  const uid = useMemo(() => `ffj-${Math.random().toString(36).slice(2, 8)}`, []);
 
   useEffect(() => {
     let raf = 0;
@@ -92,7 +99,6 @@ export function FireflyJar({
       const list = flies.current;
       const active = list.filter((f) => f.state === "in").length;
 
-      // Gradually add or release fireflies — never in bursts.
       if (accum > 0.9) {
         accum = 0;
         if (active < targetRef.current && list.length < MAX_FIREFLIES) {
@@ -109,19 +115,16 @@ export function FireflyJar({
         f.phase += dt * f.speed;
 
         if (f.state === "out") {
-          // Peaceful midnight release: rise, drift out, fade.
           f.y -= dt * 22;
           f.x += Math.sin(f.phase * 1.4) * dt * 10;
           f.opacity = Math.max(0, f.opacity - dt * 0.5);
         } else {
           f.opacity = Math.min(1, f.opacity + dt * 0.6);
           if (!reduced) {
-            // Wander via layered sine noise for organic, non-repetitive paths.
             const t = now / 1000;
-            f.vx += Math.sin(t * 0.7 * f.speed + f.seed) * dt * 26;
-            f.vy += Math.cos(t * 0.53 * f.speed + f.seed * 1.7) * dt * 26;
+            f.vx += Math.sin(t * 0.7 * f.speed + f.seed) * dt * 24;
+            f.vy += Math.cos(t * 0.53 * f.speed + f.seed * 1.7) * dt * 24;
 
-            // Gentle separation so they do not clump.
             for (let j = 0; j < list.length; j++) {
               if (j === i) continue;
               const o = list[j];
@@ -136,31 +139,29 @@ export function FireflyJar({
               }
             }
 
-            // Tap ripple: nearby fireflies scatter, then settle back.
             const rp = ripple.current;
             if (rp && now - rp.t < 900) {
               const dx = f.x - rp.x;
               const dy = f.y - rp.y;
               const d = Math.hypot(dx, dy) || 1;
-              if (d < 70) f.vx += (dx / d) * dt * 320 * (1 - d / 70);
-              if (d < 70) f.vy += (dy / d) * dt * 320 * (1 - d / 70);
+              if (d < 70) {
+                f.vx += (dx / d) * dt * 300 * (1 - d / 70);
+                f.vy += (dy / d) * dt * 300 * (1 - d / 70);
+              }
             }
 
-            // Keep them inside the glass.
-            const nx = (f.x - BOUNDS.cx) / BOUNDS.rx;
-            const ny = (f.y - BOUNDS.cy) / BOUNDS.ry;
-            const rad = Math.hypot(nx, ny);
-            if (rad > 0.82) {
-              const pull = (rad - 0.82) * 220;
-              f.vx -= (nx / (rad || 1)) * dt * pull;
-              f.vy -= (ny / (rad || 1)) * dt * pull;
-            }
+            // Keep inside the straight-sided glass.
+            const pad = 10;
+            if (f.x < IN.x0 + pad) f.vx += (IN.x0 + pad - f.x) * dt * 26;
+            if (f.x > IN.x1 - pad) f.vx -= (f.x - (IN.x1 - pad)) * dt * 26;
+            if (f.y < IN.y0 + pad) f.vy += (IN.y0 + pad - f.y) * dt * 26;
+            if (f.y > IN.y1 - pad) f.vy -= (f.y - (IN.y1 - pad)) * dt * 26;
 
             const damp = Math.pow(0.42, dt);
             f.vx *= damp;
             f.vy *= damp;
             const sp = Math.hypot(f.vx, f.vy);
-            const max = 22 * f.speed;
+            const max = 20 * f.speed;
             if (sp > max) {
               f.vx = (f.vx / sp) * max;
               f.vy = (f.vy / sp) * max;
@@ -172,13 +173,18 @@ export function FireflyJar({
 
         const node = nodes.current[i];
         if (node) {
-          const pulse = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(f.phase * 2.1 + f.seed));
-          node.setAttribute("transform", `translate(${f.x.toFixed(2)} ${f.y.toFixed(2)})`);
-          node.style.opacity = String(f.opacity * (reduced ? 0.85 : pulse));
+          const flick =
+            0.55 +
+            0.3 * (0.5 + 0.5 * Math.sin(f.phase * f.flicker + f.seed)) +
+            0.15 * (0.5 + 0.5 * Math.sin(f.phase * f.flicker * 2.7 + f.seed * 0.3));
+          node.setAttribute(
+            "transform",
+            `translate(${f.x.toFixed(2)} ${f.y.toFixed(2)}) scale(${f.r.toFixed(2)})`,
+          );
+          node.style.opacity = String(f.opacity * f.bright * (reduced ? 0.9 : flick));
         }
       }
 
-      // Drop fully faded fireflies (keeps slot indices stable enough).
       if (list.some((f) => f.state === "out" && f.opacity <= 0)) {
         flies.current = list.filter((f) => !(f.state === "out" && f.opacity <= 0));
         nodes.current.forEach((n) => {
@@ -199,69 +205,71 @@ export function FireflyJar({
     const point = "touches" in e ? e.touches[0] : (e as React.MouseEvent);
     if (!point) return;
     const x = ((point.clientX - rect.left) / rect.width) * 200;
-    const y = ((point.clientY - rect.top) / rect.height) * 240;
+    const y = ((point.clientY - rect.top) / rect.height) * 260;
     ripple.current = { x, y, t: performance.now() };
     setRippleKey((k) => k + 1);
   };
 
   return (
     <svg
-      viewBox="0 0 200 240"
-      className="mx-auto block w-full max-w-[260px] cursor-pointer select-none"
+      viewBox="0 0 200 260"
+      className="mx-auto block w-full max-w-[240px] cursor-pointer select-none"
       role="img"
       aria-label={`${days} days no contact. Today is ${Math.round(progress * 100)}% complete.`}
       onPointerDown={handleTap as unknown as React.MouseEventHandler<SVGSVGElement>}
     >
       <defs>
-        <radialGradient id={`${glowId}-body`} cx="50%" cy="42%" r="62%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-          <stop offset="70%" stopColor="#f2fbf3" stopOpacity="0.65" />
-          <stop offset="100%" stopColor="#dcefe0" stopOpacity="0.55" />
-        </radialGradient>
-        <radialGradient id={`${glowId}-halo`} cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#ffe9a8" stopOpacity="0.9" />
-          <stop offset="60%" stopColor="#ffdf8a" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#ffd873" stopOpacity="0" />
-        </radialGradient>
-        <linearGradient id={`${glowId}-lid`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#c79a63" />
-          <stop offset="100%" stopColor="#9d7442" />
+        {/* barely-there glass tint with a cool blue lean */}
+        <linearGradient id={`${uid}-glass`} x1="0" y1="0" x2="1" y2="0.4">
+          <stop offset="0%" stopColor="#dbe6f0" stopOpacity="0.22" />
+          <stop offset="35%" stopColor="#ffffff" stopOpacity="0.06" />
+          <stop offset="75%" stopColor="#e8f0f7" stopOpacity="0.10" />
+          <stop offset="100%" stopColor="#c9d8e6" stopOpacity="0.20" />
         </linearGradient>
-        <clipPath id={`${glowId}-clip`}>
-          <ellipse cx={BOUNDS.cx} cy={BOUNDS.cy} rx={BOUNDS.rx} ry={BOUNDS.ry} />
+        <linearGradient id={`${uid}-cork`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#d3a978" />
+          <stop offset="100%" stopColor="#a97e4f" />
+        </linearGradient>
+        <radialGradient id={`${uid}-halo`} cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffe9a8" stopOpacity="0.85" />
+          <stop offset="45%" stopColor="#ffd873" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="#ffcf5c" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={`${uid}-ambient`} cx="50%" cy="55%" r="50%">
+          <stop offset="0%" stopColor="#ffe6a0" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#ffe6a0" stopOpacity="0" />
+        </radialGradient>
+        <clipPath id={`${uid}-clip`}>
+          <path d={INNER_PATH} />
         </clipPath>
       </defs>
 
-      {/* ambient warmth that grows with the day */}
+      {/* accumulated warmth from the fireflies (never from the glass itself) */}
       <ellipse
-        cx={BOUNDS.cx}
-        cy={BOUNDS.cy}
-        rx={BOUNDS.rx * 1.5}
-        ry={BOUNDS.ry * 1.4}
-        fill={`url(#${glowId}-halo)`}
-        opacity={0.15 + progress * 0.5}
-        className={reduced ? undefined : "ff-breathe"}
+        cx={CX}
+        cy={CY + 6}
+        rx="86"
+        ry="96"
+        fill={`url(#${uid}-ambient)`}
+        opacity={0.1 + progress * 0.45}
       />
 
-      {/* lid */}
-      <rect x="66" y="26" width="68" height="26" rx="8" fill={`url(#${glowId}-lid)`} />
-      <rect x="72" y="20" width="56" height="12" rx="6" fill="#b98a55" />
-
-      {/* neck */}
-      <path d="M76 50h48v14c0 4-4 6-8 8H84c-4-2-8-4-8-8V50Z" fill="#e6f2e8" opacity="0.85" />
+      {/* cork */}
+      <path d="M74 24h52v22c0 4-3 6-8 6H82c-5 0-8-2-8-6V24Z" fill={`url(#${uid}-cork)`} />
+      <rect x="78" y="20" width="44" height="8" rx="4" fill="#e0b688" opacity="0.8" />
+      <path d="M74 34h52" stroke="#8d6538" strokeWidth="1" opacity="0.35" />
 
       {/* glass body */}
-      <ellipse
-        cx={BOUNDS.cx}
-        cy={BOUNDS.cy}
-        rx={BOUNDS.rx}
-        ry={BOUNDS.ry}
-        fill={`url(#${glowId}-body)`}
-        stroke="#bcd9c3"
-        strokeWidth="2"
-      />
+      <path d={JAR_PATH} fill={`url(#${uid}-glass)`} stroke="#a9b7c4" strokeWidth="2.2" strokeLinejoin="round" />
+      {/* inner wall line — reads as glass thickness */}
+      <path d={INNER_PATH} fill="none" stroke="#c6d3de" strokeWidth="1.1" opacity="0.75" />
+      {/* neck rings */}
+      <path d="M70 52h60" stroke="#a9b7c4" strokeWidth="1.6" opacity="0.8" />
+      <path d="M67 66h66" stroke="#c1cedb" strokeWidth="1.2" opacity="0.7" />
+      {/* flat base */}
+      <path d="M60 205h80" stroke="#c1cedb" strokeWidth="1.2" opacity="0.7" />
 
-      <g clipPath={`url(#${glowId}-clip)`}>
+      <g clipPath={`url(#${uid}-clip)`}>
         {slots.map((i) => (
           <g
             key={i}
@@ -270,13 +278,13 @@ export function FireflyJar({
             }}
             style={{ opacity: 0 }}
           >
-            <circle r="9" fill={`url(#${glowId}-halo)`} />
-            <circle r="2.2" fill="#fff6d0" />
-            <circle r="1.1" fill="#ffffff" />
+            <circle r="11" fill={`url(#${uid}-halo)`} />
+            <ellipse cx="-1.6" cy="0" rx="1.9" ry="1.2" fill="#8a7a55" opacity="0.5" />
+            <circle r="2" cx="1.1" fill="#fff3c4" />
+            <circle r="0.9" cx="1.1" fill="#ffffff" />
           </g>
         ))}
 
-        {/* tap ripple on the glass */}
         {ripple.current ? (
           <circle
             key={rippleKey}
@@ -291,22 +299,37 @@ export function FireflyJar({
         ) : null}
       </g>
 
-      {/* highlight */}
+      {/* soft glass highlights */}
       <path
-        d="M70 100c-4 18-3 34 4 48"
+        d="M67 96c-3 22-3 46 1 68"
         stroke="#ffffff"
-        strokeWidth="6"
+        strokeWidth="5"
         strokeLinecap="round"
-        opacity="0.7"
+        opacity="0.55"
+        fill="none"
+      />
+      <path
+        d="M78 92c-2 14-2 28 0 40"
+        stroke="#ffffff"
+        strokeWidth="2"
+        strokeLinecap="round"
+        opacity="0.35"
+        fill="none"
+      />
+      <path
+        d="M136 110c2 26 2 52 0 74"
+        stroke="#ffffff"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        opacity="0.28"
         fill="none"
       />
 
-      {/* counter inside the jar */}
+      {/* counter inside the jar — always in front of the fireflies */}
       <g pointerEvents="none">
-        <ellipse cx={BOUNDS.cx} cy={BOUNDS.cy - 2} rx="46" ry="34" fill="#ffffff" opacity="0.55" />
         <text
-          x={BOUNDS.cx}
-          y={BOUNDS.cy + 8}
+          x={CX}
+          y={CY + 8}
           textAnchor="middle"
           className="fill-on-tint"
           style={{ fontSize: 54, fontWeight: 600, letterSpacing: "-0.02em" }}
@@ -314,11 +337,11 @@ export function FireflyJar({
           {days}
         </text>
         <text
-          x={BOUNDS.cx}
-          y={BOUNDS.cy + 32}
+          x={CX}
+          y={CY + 32}
           textAnchor="middle"
           className="fill-on-tint"
-          style={{ fontSize: 15, fontWeight: 500, opacity: 0.75 }}
+          style={{ fontSize: 15, fontWeight: 500, opacity: 0.7 }}
         >
           {days === 1 ? "Day" : "Days"}
         </text>
