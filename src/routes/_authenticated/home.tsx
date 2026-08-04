@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/AppShell";
+import { DailyTasks } from "@/components/DailyTasks";
 import { SoftCard } from "@/components/SoftCard";
 import { Button } from "@/components/ui/button";
 import {
@@ -240,6 +241,8 @@ function HomeScreen() {
             Best streak so far: {Math.max(streak.data?.best_days ?? 0, days)} days
           </p>
         </SoftCard>
+
+        <DailyTasks />
 
         <div className="grid grid-cols-3 gap-3">
           <Link to="/flags" className="press">
