@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, HeartHandshake, Mail, RotateCcw, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowRight, Flag, HeartHandshake, Mail, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -30,9 +30,10 @@ import {
 } from "@/data/repository";
 import { MoodCheckIn, type MoodCheckInResult } from "@/components/MoodCheckIn";
 import { useAuth } from "@/hooks/useAuth";
+import { useDailyQuote } from "@/hooks/useDailyQuote";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { celebrate } from "@/lib/celebrate";
-import { actionByKey, BADGES, earnedBadgeKeys, moodByKey, pickForDay, QUOTES } from "@/lib/content";
+import { actionByKey, BADGES, earnedBadgeKeys, moodByKey } from "@/lib/content";
 import { haptic } from "@/lib/native/haptics";
 import { celebrateMilestone } from "@/lib/notifications";
 import { daysSince, elapsedSince, milestoneProgress, nextMilestone } from "@/lib/streak";
@@ -77,6 +78,7 @@ function HomeScreen() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   useTick();
+  const dailyQuote = useDailyQuote();
 
   useEffect(() => {
     analytics.screen("home");
@@ -183,8 +185,13 @@ function HomeScreen() {
     onSuccess: async () => {
       haptic.warning();
       analytics.track("streak_reset", { days });
-      toast("Timer restarted. A reset is data, not failure.");
-      await queryClient.invalidateQueries({ queryKey: ["streak", userId] });
+      toast("Your streak has been reset. Today is a new beginning.");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["streak", userId] }),
+        queryClient.invalidateQueries({ queryKey: ["badges", userId] }),
+        queryClient.invalidateQueries({ queryKey: ["wins", userId] }),
+        queryClient.invalidateQueries({ queryKey: ["flags", userId] }),
+      ]);
     },
     onError: (error) => toast.error(humanizeError(error)),
   });
@@ -208,7 +215,11 @@ function HomeScreen() {
   return (
     <AppShell
       title={name ? `Hi ${name}` : "Your reset"}
-      subtitle={pickForDay(QUOTES)}
+      subtitle={
+        <span key={dailyQuote} className="animate-fade-in block">
+          {dailyQuote}
+        </span>
+      }
     >
       <div className="space-y-4">
         <SoftCard className="bg-mint text-center">
@@ -247,7 +258,10 @@ function HomeScreen() {
         <div className="grid grid-cols-3 gap-3">
           <Link to="/flags" className="press">
             <SoftCard className="bg-coral h-full text-center">
-              <p className="text-2xl font-semibold text-on-tint">{flags.data?.length ?? 0}</p>
+              <p className="flex items-center justify-center gap-1.5 text-2xl font-semibold text-on-tint">
+                <Flag className="size-5 fill-red-600 text-red-600" aria-hidden />
+                {flags.data?.length ?? 0}
+              </p>
               <p className="text-xs text-on-tint/70">Flags</p>
             </SoftCard>
           </Link>
@@ -411,32 +425,40 @@ function HomeScreen() {
           }}
         />
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="ghost"
-              className="press h-12 w-full rounded-2xl text-muted-foreground"
-              onClick={() => haptic.light()}
-            >
-              <RotateCcw className="size-4" aria-hidden />I broke no contact
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="rounded-3xl">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Restart your timer?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Your best streak of {Math.max(streak.data?.best_days ?? 0, days)} days is kept.
-                Relapse is part of recovery — starting again today is still progress.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel className="rounded-2xl">Not yet</AlertDialogCancel>
-              <AlertDialogAction className="rounded-2xl" onClick={() => reset.mutate()}>
-                Restart timer
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="space-y-2 pt-2">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                disabled={reset.isPending}
+                className="press h-12 w-full rounded-2xl"
+                onClick={() => haptic.light()}
+              >
+                <AlertTriangle className="size-4" aria-hidden />I broke no contact
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-3xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset No Contact?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will reset your current streak back to Day 0. This action cannot be undone.
+                  Are you sure you want to continue? Your best streak of{" "}
+                  {Math.max(streak.data?.best_days ?? 0, days)} days is kept.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="rounded-2xl">Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  className="rounded-2xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => reset.mutate()}
+                >
+                  Yes, Reset Streak
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+          <p className="text-center text-xs text-muted-foreground">Resets your streak to Day 0</p>
+        </div>
       </div>
     </AppShell>
   );
