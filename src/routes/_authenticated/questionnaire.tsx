@@ -13,6 +13,7 @@ import { profileRepo, questionnaireRepo, streakRepo } from "@/data/repository";
 import type { QuestionnaireAnswers } from "@/data/types";
 import { useAuth } from "@/hooks/useAuth";
 import { analytics, humanizeError } from "@/lib/analytics";
+import { activity } from "@/lib/badgeActivity";
 import { haptic } from "@/lib/native/haptics";
 import { requestNotificationPermission, syncReminders } from "@/lib/notifications";
 import { cn } from "@/lib/utils";
@@ -130,6 +131,8 @@ function Questionnaire() {
       });
       haptic.success();
       analytics.track("questionnaire_completed");
+      activity.onboardingDone();
+      if (answers.nickname) activity.profileSetupDone();
       void navigate({ to: "/home" });
     } catch (error) {
       analytics.error(error, { stage: "questionnaire" });
