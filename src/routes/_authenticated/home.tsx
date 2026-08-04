@@ -22,7 +22,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  badgeRepo,
   flagRepo,
   letterRepo,
   moodRepo,
@@ -35,7 +34,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDailyQuote } from "@/hooks/useDailyQuote";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { celebrate } from "@/lib/celebrate";
-import { actionByKey, BADGES, earnedBadgeKeys, moodByKey } from "@/lib/content";
+import { actionByKey, BADGES, moodByKey } from "@/lib/content";
+import { useBadges } from "@/hooks/useBadges";
 import { haptic } from "@/lib/native/haptics";
 import { celebrateMilestone } from "@/lib/notifications";
 import { daysSince, elapsedSince } from "@/lib/streak";
@@ -170,26 +170,8 @@ function HomeScreen() {
   const dayProgress =
     (now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 86400;
 
-  useEffect(() => {
-    if (!userId || !startedAt) return;
-    let sosUsed = false;
-    try {
-      sosUsed = window.localStorage.getItem("nc:sos-used") === "1";
-    } catch {
-      sosUsed = false;
-    }
-    const keys = earnedBadgeKeys({
-      days,
-      flags: flags.data?.length ?? 0,
-      wins: wins.data?.length ?? 0,
-      letters: letters.data?.length ?? 0,
-      sosUsed,
-    });
-    if (keys.length === 0) return;
-    void badgeRepo.unlock(userId, keys).then((rows) => {
-      queryClient.setQueryData(["badges", userId], rows);
-    });
-  }, [userId, startedAt, days, flags.data, wins.data, letters.data, queryClient]);
+  // Central badge engine: gathers every stat, unlocks and toasts automatically.
+  const badgeState = useBadges({ autoUnlock: true });
 
   const reset = useMutation({
     mutationFn: async () => {
@@ -267,13 +249,7 @@ function HomeScreen() {
           <Link to="/badges" className="press">
             <SoftCard className="bg-lavender h-full text-center">
               <p className="text-2xl font-semibold text-on-tint">
-                {earnedBadgeKeys({
-                  days,
-                  flags: flags.data?.length ?? 0,
-                  wins: wins.data?.length ?? 0,
-                  letters: letters.data?.length ?? 0,
-                  sosUsed: false,
-                }).length}
+                {badgeState.unlockedCount}
               </p>
               <p className="text-xs text-on-tint/70">Badges</p>
             </SoftCard>
