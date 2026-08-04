@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const MAX_FIREFLIES = 30;
+/** The jar is never empty — new users still see a couple of soft glows. */
+const MIN_FIREFLIES = 2;
 
 /** Jar interior bounds in SVG user units (viewBox 0 0 260 190). */
 const IN = { x0: 64, x1: 196, y0: 74, y1: 158 };
@@ -78,7 +80,7 @@ export function FireflyJar({
   const progress = Math.min(1, Math.max(0, dailyProgress));
   // Slightly front-loaded curve so the jar feels alive early and rich by night.
   const target = Math.max(
-    reduced ? 2 : 0,
+    MIN_FIREFLIES,
     Math.round(Math.pow(progress, 0.85) * MAX_FIREFLIES),
   );
 
