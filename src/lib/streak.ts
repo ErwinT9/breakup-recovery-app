@@ -27,7 +27,10 @@ export function daysSince(iso: string, now = Date.now()): number {
   return elapsedSince(iso, now).days;
 }
 
-export const MILESTONES = [1, 3, 7, 14, 30, 60, 90, 180, 365];
+import { MILESTONE_BADGES } from "@/lib/content";
+
+/** Derived from the badge system so milestones never drift out of sync. */
+export const MILESTONES: number[] = MILESTONE_BADGES.map((badge) => badge.days);
 
 export function nextMilestone(days: number): number {
   return MILESTONES.find((milestone) => milestone > days) ?? days + 30;
