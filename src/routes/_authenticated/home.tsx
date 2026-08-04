@@ -82,17 +82,6 @@ function capitalizeName(name: string): string {
     .join(" ");
 }
 
-function UnusedUnit({ value, label }: { value: number; label: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <span className="text-2xl font-semibold tabular-nums">
-        {String(value).padStart(2, "0")}
-      </span>
-      <span className="text-[0.65rem] tracking-wide text-muted-foreground uppercase">{label}</span>
-    </div>
-  );
-}
-
 function HomeScreen() {
   const { user } = useAuth();
   const userId = user?.id ?? "";
