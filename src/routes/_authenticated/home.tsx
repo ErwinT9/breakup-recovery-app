@@ -238,9 +238,9 @@ function HomeScreen() {
       }
     >
       <div className="space-y-4">
-        <SoftCard className="bg-mint text-center">
+        <SoftCard className="bg-mint px-5 py-3 text-center">
           <FireflyJar days={elapsed.days} dailyProgress={dayProgress} />
-          <div className="mt-4 flex items-center justify-center gap-6 text-on-tint">
+          <div className="mt-1 flex items-center justify-center gap-6 text-on-tint">
             <Unit value={elapsed.hours} label="hrs" />
             <Unit value={elapsed.minutes} label="min" />
             <Unit value={elapsed.seconds} label="sec" />
