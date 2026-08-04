@@ -71,3 +71,20 @@ export function getQuoteOfTheDay(date = new Date()): string {
   write({ day: today, index, bag });
   return DAILY_QUOTES[index] as string;
 }
+
+/**
+ * A second quote for the same calendar day (used in the SOS toolkit) that is
+ * always different from the Home screen quote. Deterministic + offline-safe.
+ */
+export function getSupportQuoteOfTheDay(date = new Date()): string {
+  const primary = getQuoteOfTheDay(date);
+  const total = DAILY_QUOTES.length;
+  const dayNumber = Math.floor(date.getTime() / 86_400_000);
+  let index = ((dayNumber * 37 + 11) % total + total) % total;
+  for (let i = 0; i < total; i += 1) {
+    const candidate = DAILY_QUOTES[index] as string;
+    if (candidate !== primary) return candidate;
+    index = (index + 1) % total;
+  }
+  return primary;
+}
