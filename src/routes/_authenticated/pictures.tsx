@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { localId, pictureRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
+import { activity } from "@/lib/badgeActivity";
 import { humanizeError } from "@/lib/analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { haptic } from "@/lib/native/haptics";
@@ -68,6 +69,7 @@ function Pictures() {
       return pictureRepo.save(userId, { image_url: path, caption: caption.trim() || null });
     },
     onSuccess: (next) => {
+      activity.featureUsed("pictures");
       queryClient.setQueryData(["pictures", userId], next);
       setCaption("");
       haptic.success();

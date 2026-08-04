@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { flagRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
+import { activity } from "@/lib/badgeActivity";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { FLAG_CATEGORIES, FLAG_SUGGESTIONS } from "@/lib/content";
 import { haptic } from "@/lib/native/haptics";
@@ -61,6 +62,7 @@ function FlagsScreen() {
   const add = useMutation({
     mutationFn: async () => flagRepo.save(userId, { title: title.trim(), note: note.trim() || null, category }),
     onSuccess: (rows) => {
+      activity.featureUsed("flags");
       queryClient.setQueryData(["flags", userId], rows);
       haptic.success();
       setTitle("");

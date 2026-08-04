@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { letterRepo } from "@/data/repository";
 import { useAuth } from "@/hooks/useAuth";
+import { activity } from "@/lib/badgeActivity";
 import { analytics, humanizeError } from "@/lib/analytics";
 import { EMOTIONS } from "@/lib/content";
 import { haptic } from "@/lib/native/haptics";
@@ -62,6 +63,7 @@ function LettersScreen() {
     mutationFn: async () =>
       letterRepo.save(userId, { title: title.trim() || null, body: body.trim(), emotion }),
     onSuccess: (rows) => {
+      activity.featureUsed("letters");
       queryClient.setQueryData(["letters", userId], rows);
       haptic.success();
       toast("Saved. It stays here, with you.");
